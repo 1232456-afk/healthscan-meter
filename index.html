@@ -5,640 +5,271 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
 <meta name="theme-color" content="#020810"/>
 <link rel="icon" type="image/png" href="favicon.png"/>
-<link rel="icon" type="image/png" sizes="32x32" href="favicon.png"/>
 <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png"/>
 <link rel="manifest" href="manifest.json"/>
 <title>HealthScan Pro — BP & Oximeter</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
-<style>
-:root{
-  --bg:#020810;--bg-card:#050f1e;--bg-panel:#071525;
-  --cyan:#00e5ff;--green:#00ff88;--red:#ff3366;--orange:#ff8c00;--purple:#8b5cf6;
-  --t1:#e0f4ff;--t2:#7ab8d4;--t3:#3a6a84;
-  --border:rgba(0,229,255,0.15);
-  --gcyan:0 0 20px rgba(0,229,255,.5),0 0 40px rgba(0,229,255,.2);
-  --ggreen:0 0 20px rgba(0,255,136,.5),0 0 40px rgba(0,255,136,.2);
-  --gred:0 0 20px rgba(255,51,102,.5),0 0 40px rgba(255,51,102,.2);
-}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden;position:relative}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);background-size:40px 40px;z-index:0;animation:gp 8s ease-in-out infinite}
-body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(0,60,100,.15) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(0,100,60,.1) 0%,transparent 50%);z-index:0;pointer-events:none}
-@keyframes gp{0%,100%{opacity:.5}50%{opacity:1}}
 
-.wrap{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px 40px;max-width:500px;margin:0 auto}
-
-/* HEADER */
-.header{width:100%;display:flex;align-items:center;justify-content:space-between;padding:16px 0 24px}
-.hlogo{display:flex;align-items:center;gap:10px}
-.hicon{width:38px;height:38px;border:1.5px solid var(--cyan);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:var(--gcyan);background:rgba(0,229,255,.05)}
-.hicon svg{width:22px;height:22px;fill:none;stroke:var(--cyan);stroke-width:1.8}
-.hname{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:var(--cyan);letter-spacing:2px;text-shadow:var(--gcyan);display:block}
-.hsub{font-size:9px;color:var(--t3);letter-spacing:3px;display:block;font-family:'Share Tech Mono',monospace}
-.hright{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.hstatus{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--t3)}
-.hstatus::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:var(--ggreen);animation:blink 2s ease-in-out infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.hclock{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--t2)}
-
-/* SENSOR CARD */
-.scard{width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:24px;padding:28px 24px;margin-bottom:20px;position:relative;overflow:hidden;transition:border-color .4s,box-shadow .4s}
-.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:.6}
-.scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0;pointer-events:none;z-index:10}
-.scard.measuring .scanline{animation:scan 1.5s linear infinite;opacity:.4}
-@keyframes scan{from{top:0}to{top:100%}}
-.scard.active{border-color:rgba(0,229,255,.4);box-shadow:0 0 40px rgba(0,229,255,.1),inset 0 0 40px rgba(0,229,255,.03)}
-.scard.measuring{border-color:rgba(0,255,136,.4);box-shadow:0 0 40px rgba(0,255,136,.1),inset 0 0 40px rgba(0,255,136,.03)}
-.slabel{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:4px;color:var(--t3);margin-bottom:20px;display:flex;align-items:center;gap:8px}
-.slabel::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
-
-/* SENSOR PLATFORM */
-.sfinger{display:flex;flex-direction:column;align-items:center;gap:20px;padding:10px 0}
-.splatform{position:relative;width:200px;height:200px;display:flex;align-items:center;justify-content:center}
-.sring{position:absolute;border-radius:50%;border:1px solid;animation:rpulse 3s ease-in-out infinite}
-.r1{width:200px;height:200px;border-color:rgba(0,229,255,.08);animation-delay:0s}
-.r2{width:165px;height:165px;border-color:rgba(0,229,255,.12);animation-delay:.5s}
-.r3{width:130px;height:130px;border-color:rgba(0,229,255,.18);animation-delay:1s}
-@keyframes rpulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.04)}}
-.score{width:110px;height:110px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(0,229,255,.12),rgba(0,30,60,.8));border:2px solid rgba(0,229,255,.3);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;transition:all .3s;box-shadow:0 0 30px rgba(0,229,255,.15),inset 0 0 20px rgba(0,229,255,.05);user-select:none;-webkit-user-select:none}
-.score:hover,.score.touched{border-color:rgba(0,229,255,.7);box-shadow:0 0 50px rgba(0,229,255,.35),inset 0 0 30px rgba(0,229,255,.12);transform:scale(1.05)}
-.score.measuring{border-color:rgba(0,255,136,.7);box-shadow:0 0 50px rgba(0,255,136,.35),inset 0 0 30px rgba(0,255,136,.12);animation:mpulse .8s ease-in-out infinite}
-@keyframes mpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-.sinner{width:65px;height:65px;border-radius:50%;background:radial-gradient(circle,rgba(0,100,140,.6),rgba(0,20,40,.9));display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px}
-.sicon{font-size:22px;filter:drop-shadow(0 0 8px rgba(0,229,255,.8))}
-.sinnertext{font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--t3);letter-spacing:1px}
-.sdots{position:absolute;inset:0;border-radius:50%;pointer-events:none}
-.sdots span{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--cyan);box-shadow:var(--gcyan);opacity:.6}
-.dn{top:8px;left:50%;transform:translateX(-50%)}
-.de{right:8px;top:50%;transform:translateY(-50%)}
-.ds{bottom:8px;left:50%;transform:translateX(-50%)}
-.dw{left:8px;top:50%;transform:translateY(-50%)}
-.sinstr{text-align:center}
-.sinstr-main{font-family:'Orbitron',monospace;font-size:13px;font-weight:600;color:var(--t1);letter-spacing:1px;margin-bottom:6px}
-.sinstr-sub{font-size:12px;color:var(--t3);letter-spacing:.5px}
-
-/* PROGRESS */
-.prog{width:100%;margin-top:4px}
-.prog-lbl{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--t3);margin-bottom:6px}
-.prog-bar{width:100%;height:3px;background:rgba(0,229,255,.1);border-radius:2px;overflow:hidden}
-.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--cyan),var(--green));border-radius:2px;transition:width .1s linear;box-shadow:0 0 8px rgba(0,229,255,.8)}
-
-/* WAVE */
-.wave{width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:20px 20px 16px;margin-bottom:20px;position:relative;overflow:hidden}
-.wave::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--green),transparent);opacity:.4}
-.wave-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.wave-title{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:3px}
-.wave-bpm{font-family:'Orbitron',monospace;font-size:12px;color:var(--green);text-shadow:var(--ggreen);letter-spacing:2px}
-canvas{width:100%;height:70px;display:block}
-
-/* METRICS GRID */
-.mgrid{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.mcard{background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:20px 16px;position:relative;overflow:hidden;transition:all .4s}
-.mcard::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;border-radius:0 0 20px 20px;opacity:0;transition:opacity .4s}
-.mcard.bp::after{background:linear-gradient(90deg,var(--red),var(--orange))}
-.mcard.spo2::after{background:linear-gradient(90deg,var(--cyan),var(--purple))}
-.mcard.ready::after{opacity:1}
-.mcard.ready.bp{border-color:rgba(255,51,102,.25);box-shadow:0 4px 30px rgba(255,51,102,.08)}
-.mcard.ready.spo2{border-color:rgba(0,229,255,.25);box-shadow:0 4px 30px rgba(0,229,255,.08)}
-.micon-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.micon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px}
-.bp .micon{background:rgba(255,51,102,.12)}
-.spo2 .micon{background:rgba(0,229,255,.1)}
-.mbadge{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:3px 8px;border-radius:20px;color:var(--t3);border:1px solid var(--border)}
-.mbadge.ok{color:var(--green);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.07)}
-.mbadge.warn{color:var(--orange);border-color:rgba(255,140,0,.3);background:rgba(255,140,0,.07)}
-.mbadge.bad{color:var(--red);border-color:rgba(255,51,102,.3);background:rgba(255,51,102,.07)}
-.mname{font-size:10px;letter-spacing:2px;color:var(--t3);font-family:'Rajdhani',sans-serif;font-weight:500;margin-bottom:6px}
-.mval{font-family:'Orbitron',monospace;font-size:28px;font-weight:700;line-height:1;margin-bottom:4px;transition:all .5s}
-.bp .mval{color:var(--red);text-shadow:var(--gred)}
-.spo2 .mval{color:var(--cyan);text-shadow:var(--gcyan)}
-.mval.dim{font-size:18px;color:var(--t3)!important;text-shadow:none!important}
-.munit{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--t2);letter-spacing:1px}
-
-/* EXTRA 3 CARDS */
-.egrid{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
-.ecard{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:14px 10px;display:flex;flex-direction:row;align-items:center;gap:8px;transition:all .3s;overflow:hidden}
-.ecard.ready{border-color:rgba(0,229,255,.2);box-shadow:0 4px 20px rgba(0,229,255,.06)}
-.eicon{font-size:20px;flex-shrink:0;line-height:1}
-.einfo{display:flex;flex-direction:column;gap:2px;min-width:0}
-.elabel{font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:1px;color:var(--t3);white-space:nowrap}
-.eval{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:var(--cyan);text-shadow:var(--gcyan);line-height:1;white-space:nowrap}
-.eval.dim{color:var(--t3)!important;text-shadow:none!important;font-size:12px}
-.eunit{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--t2)}
-
-/* HISTORY */
-.hist{width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:20px}
-.hist-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.hist-title{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:var(--t2)}
-.clearbtn{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--t3);background:none;border:1px solid var(--border);border-radius:20px;padding:4px 10px;cursor:pointer;transition:all .2s}
-.clearbtn:hover{color:var(--red);border-color:rgba(255,51,102,.3)}
-.hempty{text-align:center;padding:20px;color:var(--t3);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px}
-.hlist{display:flex;flex-direction:column;gap:8px}
-.hitem{display:grid;grid-template-columns:20px 1fr 1fr 1fr;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-panel);border:1px solid rgba(0,229,255,.06);border-radius:12px;animation:slin .3s ease}
-@keyframes slin{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
-.hnum{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--t3)}
-.hbp{font-family:'Orbitron',monospace;font-size:12px;color:var(--red)}
-.hspo2{font-family:'Orbitron',monospace;font-size:12px;color:var(--cyan)}
-.hhr{font-family:'Orbitron',monospace;font-size:12px;color:var(--purple)}
-.htime{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--t3);text-align:right}
-
-/* INFO PILLS */
-.istrip{width:100%;display:flex;gap:10px;margin-bottom:24px}
-.ipill{flex:1;background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px}
-.ipicon{font-size:16px}
-.iptext{font-size:10px;color:var(--t3);line-height:1.4}
-.iptext strong{color:var(--t2);font-weight:600;display:block}
-
-/* ===== FOOTER ===== */
-.footer{width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:24px;overflow:hidden;margin-bottom:30px}
-.ft-brand{display:flex;align-items:center;gap:14px;padding:20px 20px 16px}
-.ft-icon{width:44px;height:44px;background:linear-gradient(135deg,rgba(0,229,255,.12),rgba(0,229,255,.04));border:1px solid rgba(0,229,255,.22);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 15px rgba(0,229,255,.08)}
-.ft-icon svg{width:22px;height:22px;fill:none;stroke:var(--cyan);stroke-width:1.8}
-.ft-bname{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:var(--t1);letter-spacing:1px;display:block}
-.ft-bsub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--t3);letter-spacing:2px;display:block;margin-top:3px}
-.ft-div{height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,255,.12),transparent);margin:0 16px}
-.ft-install{padding:20px;display:flex;flex-direction:column;gap:14px}
-.ft-ititle{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--t1);letter-spacing:.5px}
-.ft-idesc{font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--t3)}
-.ft-feats{display:flex;gap:8px;flex-wrap:wrap}
-.ft-feat{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--green);background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.2);border-radius:20px;padding:4px 10px}
-
-/* BIG INSTALL BUTTON */
-.ibtn{width:100%;background:linear-gradient(135deg,#00c8e0,#0095b5,#006e99);border:none;border-radius:16px;padding:18px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;position:relative;overflow:hidden;box-shadow:0 0 35px rgba(0,200,224,.4),0 8px 25px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15);transition:all .3s ease}
-.ibtn::before{content:'';position:absolute;top:0;left:-70%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);animation:shimmer 2.8s ease-in-out infinite}
-@keyframes shimmer{0%{left:-70%}60%,100%{left:110%}}
-.ibtn:hover{transform:translateY(-3px);box-shadow:0 0 50px rgba(0,200,224,.6),0 12px 35px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.2)}
-.ibtn:active{transform:translateY(0) scale(.98)}
-.ibtn.done{background:linear-gradient(135deg,#00d97e,#009955);box-shadow:0 0 35px rgba(0,217,126,.45),0 8px 25px rgba(0,0,0,.5)}
-.ibi{font-size:28px;flex-shrink:0;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4))}
-.ibt{flex:1;display:flex;flex-direction:column;gap:3px;text-align:left}
-.ibmain{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;color:#001422;letter-spacing:1px;display:block}
-.ibsub{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;color:rgba(0,20,34,.65);display:block}
-.ibarr{font-size:22px;color:rgba(0,20,34,.45);font-weight:900;flex-shrink:0}
-
-.ft-bottom{display:flex;align-items:center;justify-content:space-between;padding:12px 20px}
-.ft-copy{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--t3)}
-.ft-ver{font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,229,255,.25);letter-spacing:1px}
-
-/* TOAST */
-.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--bg-panel);border:1px solid rgba(0,229,255,.25);border-radius:14px;padding:12px 20px;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--t1);z-index:1000;transition:transform .4s cubic-bezier(.34,1.56,.64,1);box-shadow:0 10px 40px rgba(0,0,0,.5);white-space:nowrap}
-.toast.show{transform:translateX(-50%) translateY(0)}
-
-/* VALUE ANIMATION */
-@keyframes vup{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
-.vin{animation:vup .4s cubic-bezier(.34,1.56,.64,1)}
-
-.install-status{display:flex;align-items:center;gap:8px;padding:2px 0 6px}
-.istatus-dot{width:7px;height:7px;border-radius:50%;background:var(--t3);flex-shrink:0;transition:background .4s}
-.istatus-dot.ready{background:var(--green);box-shadow:var(--ggreen);animation:blink 2s infinite}
-.istatus-dot.installed{background:var(--cyan);box-shadow:var(--gcyan)}
-.istatus-text{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:.5px;transition:color .4s}
-.istatus-text.ready{color:var(--green)}
-.istatus-text.installed{color:var(--cyan)}
-</style>
-</head>
+<link rel="stylesheet" href="style.css"/></head>
 <body>
+
+<div class="lang-toggle">
+  <button class="lang-btn active" data-l="en" onclick="setLang('en')">EN</button>
+  <button class="lang-btn" data-l="ur" onclick="setLang('ur')">اردو</button>
+</div>
+
 <div class="wrap">
 
 <!-- HEADER -->
 <header class="header">
   <div class="hlogo">
-    <div class="hicon">
-      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-    </div>
-    <div>
-      <span class="hname">HEALTHSCAN</span>
-      <span class="hsub">BIOMETRIC MONITOR v2.4</span>
-    </div>
+    <div class="hicon"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+    <div><span class="hname">HEALTHSCAN</span><span class="hsub" data-en="BIOMETRIC MONITOR v3.0" data-ur="بایومیٹرک مانیٹر v3.0">BIOMETRIC MONITOR v3.0</span></div>
   </div>
   <div class="hright">
-    <div class="hstatus">ONLINE</div>
-    <div class="hclock" id="clock">00:00:00</div>
+    <div class="hstatus" data-en="ONLINE" data-ur="آن لائن">ONLINE</div>
+    <div class="hclock" id="clock">--:--:--</div>
   </div>
 </header>
 
-<!-- SENSOR CARD -->
-<div class="scard" id="scard">
-  <div class="scanline"></div>
-  <div class="slabel">FINGER SENSOR MODULE</div>
-  <div class="sfinger">
-    <div class="splatform">
-      <div class="sring r1"></div>
-      <div class="sring r2"></div>
-      <div class="sring r3"></div>
-      <div class="score" id="score">
-        <div class="sdots">
-          <span class="dn"></span><span class="de"></span>
-          <span class="ds"></span><span class="dw"></span>
-        </div>
-        <div class="sinner">
-          <span class="sicon" id="sicon">👆</span>
-          <span class="sinnertext">SENSOR</span>
+<!-- NAV TABS -->
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="showPage('scan',this)"><span class="ti">🫀</span><span data-en="SCAN" data-ur="اسکین">SCAN</span></button>
+  <button class="nav-tab" onclick="showPage('bmi',this)"><span class="ti">⚖️</span><span data-en="BMI" data-ur="BMI">BMI</span></button>
+  <button class="nav-tab" onclick="showPage('stress',this)"><span class="ti">🧠</span><span data-en="STRESS" data-ur="تناؤ">STRESS</span></button>
+  <button class="nav-tab" onclick="showPage('sleep',this)"><span class="ti">😴</span><span data-en="SLEEP" data-ur="نیند">SLEEP</span></button>
+</div>
+
+<!-- ══ PAGE: SCAN ══ -->
+<div class="page active" id="page-scan">
+  <div class="scard" id="scard">
+    <div class="scanline"></div>
+    <div class="slabel" data-en="FINGER SENSOR MODULE" data-ur="فنگر سینسر ماڈیول">FINGER SENSOR MODULE</div>
+    <div class="sfinger">
+      <div class="splatform">
+        <div class="sring r1"></div><div class="sring r2"></div><div class="sring r3"></div>
+        <div class="score" id="score">
+          <div class="sdots"><span class="dn"></span><span class="de"></span><span class="ds"></span><span class="dw"></span></div>
+          <div class="sinner"><span class="sicon" id="sicon">👆</span><span class="sinnertext">SENSOR</span></div>
         </div>
       </div>
+      <div class="sinstr">
+        <div class="sinstr-main" id="imain">Place Your Finger Here</div>
+        <div class="sinstr-sub" id="isub">Touch &amp; hold the sensor to begin scan</div>
+      </div>
+      <div class="prog" id="progbox" style="display:none">
+        <div class="prog-lbl"><span data-en="SCANNING" data-ur="اسکین جاری ہے">SCANNING</span><span id="ppct">0%</span></div>
+        <div class="prog-bar"><div class="prog-fill" id="pfill"></div></div>
+      </div>
     </div>
-    <div class="sinstr">
-      <div class="sinstr-main" id="imain">Place Your Finger Here</div>
-      <div class="sinstr-sub"  id="isub">Touch &amp; hold the sensor to begin scan</div>
+  </div>
+
+  <div class="wave">
+    <div class="wave-hdr">
+      <span class="wave-title" data-en="LIVE ECG WAVEFORM" data-ur="لائیو ECG">LIVE ECG WAVEFORM</span>
+      <span class="wave-bpm" id="wbpm">-- BPM</span>
     </div>
-    <div class="prog" id="progbox" style="display:none">
-      <div class="prog-lbl"><span>SCANNING</span><span id="ppct">0%</span></div>
-      <div class="prog-bar"><div class="prog-fill" id="pfill"></div></div>
+    <canvas id="cv"></canvas>
+  </div>
+
+  <div class="mgrid">
+    <div class="mcard bp" id="bpcard">
+      <div class="micon-row"><div class="micon">🩸</div><div class="mbadge" id="bpbadge">---</div></div>
+      <div class="mname" data-en="BLOOD PRESSURE" data-ur="بلڈ پریشر">BLOOD PRESSURE</div>
+      <div class="mval dim" id="bpval">--/--</div>
+      <div class="munit" data-en="mmHg (SYS / DIA)" data-ur="mmHg (اوپر / نیچے)">mmHg (SYS / DIA)</div>
     </div>
+    <div class="mcard spo2" id="spo2card">
+      <div class="micon-row"><div class="micon">💧</div><div class="mbadge" id="spo2badge">---</div></div>
+      <div class="mname" data-en="BLOOD OXYGEN" data-ur="خون میں آکسیجن">BLOOD OXYGEN</div>
+      <div class="mval dim" id="spo2val">--%</div>
+      <div class="munit" data-en="SpO₂ Saturation" data-ur="SpO₂ سیچوریشن">SpO₂ Saturation</div>
+    </div>
+  </div>
+
+  <div class="egrid">
+    <div class="ecard" id="hrcard"><span class="eicon">❤️</span><div class="einfo"><div class="elabel" data-en="HEART RATE" data-ur="دل کی دھڑکن">HEART RATE</div><div class="eval dim" id="hrval">--</div><div class="eunit">BPM</div></div></div>
+    <div class="ecard" id="tmpcard"><span class="eicon">🌡️</span><div class="einfo"><div class="elabel" data-en="BODY TEMP" data-ur="درجہ حرارت">BODY TEMP</div><div class="eval dim" id="tmpval">--</div><div class="eunit">°C</div></div></div>
+    <div class="ecard" id="rspcard"><span class="eicon">💨</span><div class="einfo"><div class="elabel" data-en="RESP. RATE" data-ur="سانس">RESP. RATE</div><div class="eval dim" id="rspval">--</div><div class="eunit">/min</div></div></div>
+  </div>
+
+  <div class="action-row">
+    <button class="pdf-btn" onclick="exportPDF()">
+      <span class="pdf-icon">📄</span>
+      <div style="flex:1;text-align:left">
+        <span class="pdf-main" data-en="EXPORT PDF" data-ur="PDF رپورٹ">EXPORT PDF</span>
+        <span class="pdf-sub" data-en="Download report" data-ur="ڈاؤن لوڈ کریں">Download report</span>
+      </div>
+      <span style="font-size:16px;color:rgba(139,92,246,.5)">›</span>
+    </button>
+    <button class="print-btn no-print" onclick="printReport()">
+      <span class="print-icon">🖨️</span>
+      <div style="flex:1;text-align:left">
+        <span class="print-main" data-en="PRINT REPORT" data-ur="پرنٹ کریں">PRINT REPORT</span>
+        <span class="print-sub" data-en="Send to printer" data-ur="پرنٹر پر بھیجیں">Send to printer</span>
+      </div>
+      <span style="font-size:16px;color:rgba(0,229,255,.5)">›</span>
+    </button>
+  </div>
+
+  <div class="hist">
+    <div class="hist-hdr">
+      <span class="hist-title" data-en="MEASUREMENT LOG" data-ur="پیمائش کا ریکارڈ">MEASUREMENT LOG</span>
+      <button class="clearbtn" id="clearbtn" data-en="CLEAR ALL" data-ur="سب مٹائیں">CLEAR ALL</button>
+    </div>
+    <div class="hempty" id="hempty" data-en="No readings yet — place finger to start" data-ur="ابھی تک کوئی ریڈنگ نہیں">No readings yet — place finger to start</div>
+    <div class="hlist" id="hlist"></div>
+  </div>
+
+  <div class="istrip">
+    <div class="ipill"><span class="ipicon">📡</span><div class="iptext"><strong>PPG Sensor</strong>Photoplethysmography</div></div>
+    <div class="ipill"><span class="ipicon">🔒</span><div class="iptext"><strong data-en="Private" data-ur="نجی">Private</strong><span data-en="Local data" data-ur="ڈیٹا محفوظ">Local data</span></div></div>
+    <div class="ipill"><span class="ipicon">⚡</span><div class="iptext"><strong data-en="4 Sec" data-ur="4 سیکنڈ">4 Sec</strong><span data-en="Fast scan" data-ur="تیز اسکین">Fast scan</span></div></div>
   </div>
 </div>
 
-<!-- ECG WAVE -->
-<div class="wave">
-  <div class="wave-hdr">
-    <span class="wave-title">LIVE ECG WAVEFORM</span>
-    <span class="wave-bpm" id="wbpm">-- BPM</span>
-  </div>
-  <canvas id="cv"></canvas>
-</div>
+<!-- ══ PAGE: BMI ══ -->
+<div class="page" id="page-bmi">
+  <div class="sec-title" data-en="⚖️  BMI CALCULATOR" data-ur="⚖️  BMI کیلکولیٹر">⚖️  BMI CALCULATOR</div>
 
-<!-- BP + SPO2 -->
-<div class="mgrid">
-  <div class="mcard bp" id="bpcard">
-    <div class="micon-row">
-      <div class="micon">🩸</div>
-      <div class="mbadge" id="bpbadge">---</div>
-    </div>
-    <div class="mname">BLOOD PRESSURE</div>
-    <div class="mval dim" id="bpval">--/--</div>
-    <div class="munit">mmHg (SYS / DIA)</div>
-  </div>
-  <div class="mcard spo2" id="spo2card">
-    <div class="micon-row">
-      <div class="micon">💧</div>
-      <div class="mbadge" id="spo2badge">---</div>
-    </div>
-    <div class="mname">BLOOD OXYGEN</div>
-    <div class="mval dim" id="spo2val">--%</div>
-    <div class="munit">SpO₂ Saturation</div>
-  </div>
-</div>
-
-<!-- HEART RATE / TEMP / RESP -->
-<div class="egrid">
-  <div class="ecard" id="hrcard">
-    <span class="eicon">❤️</span>
-    <div class="einfo">
-      <div class="elabel">HEART RATE</div>
-      <div class="eval dim" id="hrval">--</div>
-      <div class="eunit">BPM</div>
+  <div class="input-group">
+    <label class="input-label" data-en="GENDER" data-ur="جنس">GENDER</label>
+    <div class="gender-row">
+      <button class="gender-btn male-btn active" id="genderMale" onclick="setGender('male')">
+        <span class="gico">👨</span>
+        <span class="glabel" data-en="MALE" data-ur="مرد">MALE</span>
+        <span class="gcheck">✓</span>
+      </button>
+      <button class="gender-btn female-btn" id="genderFemale" onclick="setGender('female')">
+        <span class="gico">👩</span>
+        <span class="glabel" data-en="FEMALE" data-ur="عورت">FEMALE</span>
+        <span class="gcheck">✓</span>
+      </button>
     </div>
   </div>
-  <div class="ecard" id="tmpcard">
-    <span class="eicon">🌡️</span>
-    <div class="einfo">
-      <div class="elabel">BODY TEMP</div>
-      <div class="eval dim" id="tmpval">--</div>
-      <div class="eunit">°C</div>
+  <div class="input-group"><label class="input-label" data-en="HEIGHT" data-ur="قد">HEIGHT</label><div class="input-row"><input class="inp" type="number" id="bmiHeight" placeholder="170" min="100" max="250"/><div class="inp-unit">cm</div></div></div>
+  <div class="input-group"><label class="input-label" data-en="WEIGHT" data-ur="وزن">WEIGHT</label><div class="input-row"><input class="inp" type="number" id="bmiWeight" placeholder="70" min="20" max="300"/><div class="inp-unit">kg</div></div></div>
+  <div class="input-group"><label class="input-label" data-en="AGE" data-ur="عمر">AGE</label><div class="input-row"><input class="inp" type="number" id="bmiAge" placeholder="25" min="1" max="120"/><div class="inp-unit" data-en="yrs" data-ur="سال">yrs</div></div></div>
+  <button class="calc-btn" onclick="calcBMI()" data-en="CALCULATE BMI" data-ur="BMI حساب کریں">CALCULATE BMI</button>
+  <div class="bmi-result" id="bmiResult">
+    <div class="bmi-score-row">
+      <div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--t3);margin-bottom:4px" data-en="YOUR BMI" data-ur="آپ کا BMI">YOUR BMI</div><div class="bmi-big" id="bmiNum">--</div></div>
+      <div class="bmi-cat" id="bmiCat"></div>
     </div>
+    <div class="bmi-bar-wrap"><div class="bmi-bar" id="bmiBar" style="width:0%"></div></div>
+    <div class="bmi-scale"><span data-en="Under" data-ur="کم">Under</span><span data-en="Normal" data-ur="نارمل">Normal</span><span data-en="Over" data-ur="زیادہ">Over</span><span data-en="Obese" data-ur="موٹاپا">Obese</span></div>
   </div>
-  <div class="ecard" id="rspcard">
-    <span class="eicon">💨</span>
-    <div class="einfo">
-      <div class="elabel">RESP. RATE</div>
-      <div class="eval dim" id="rspval">--</div>
-      <div class="eunit">/min</div>
-    </div>
+  <div class="tips-box" id="bmiTips" style="display:none">
+    <div class="tips-title" data-en="HEALTH TIPS" data-ur="صحت کے مشورے">HEALTH TIPS</div>
+    <div id="bmiTipsList"></div>
   </div>
 </div>
 
-<!-- HISTORY -->
-<div class="hist">
-  <div class="hist-hdr">
-    <span class="hist-title">MEASUREMENT LOG</span>
-    <button class="clearbtn" id="clearbtn">CLEAR ALL</button>
+<!-- ══ PAGE: STRESS ══ -->
+<div class="page" id="page-stress">
+  <div class="sec-title" data-en="🧠  STRESS DETECTOR" data-ur="🧠  تناؤ کا پتہ">🧠  STRESS DETECTOR</div>
+  <div class="stress-meter">
+    <div class="stress-circle">
+      <svg viewBox="0 0 160 160">
+        <circle cx="80" cy="80" r="65" fill="none" stroke="rgba(0,229,255,0.08)" stroke-width="12"/>
+        <circle cx="80" cy="80" r="65" fill="none" stroke="url(#sg)" stroke-width="12"
+          stroke-dasharray="408" stroke-dashoffset="408" stroke-linecap="round"
+          id="stressArc" style="transition:stroke-dashoffset 1s ease;transform:rotate(-90deg);transform-origin:80px 80px"/>
+        <defs><linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#00ff88"/><stop offset="50%" stop-color="#ff8c00"/><stop offset="100%" stop-color="#ff3366"/>
+        </linearGradient></defs>
+      </svg>
+      <div class="stress-val"><div class="stress-num" id="stressNum">--</div><div class="stress-lbl" data-en="STRESS LEVEL" data-ur="تناؤ کی سطح">STRESS LEVEL</div></div>
+    </div>
+    <div class="stress-grade" id="stressLabel">---</div>
   </div>
-  <div class="hempty" id="hempty">No readings yet — place finger to start</div>
-  <div class="hlist" id="hlist"></div>
+  <div class="sec-title" data-en="ADJUST FACTORS" data-ur="عوامل ایڈجسٹ کریں">ADJUST FACTORS</div>
+  <div class="sfactors">
+    <div class="sf-card"><div class="sf-title" data-en="SLEEP HOURS" data-ur="نیند کے گھنٹے">SLEEP HOURS</div><input type="range" class="sf-slider" id="sf1" min="0" max="10" value="6" oninput="calcStress()"/><div class="sf-val" id="sv1">6h</div></div>
+    <div class="sf-card"><div class="sf-title" data-en="WORKLOAD" data-ur="کام کا بوجھ">WORKLOAD</div><input type="range" class="sf-slider" id="sf2" min="0" max="10" value="5" oninput="calcStress()"/><div class="sf-val" id="sv2">5/10</div></div>
+    <div class="sf-card"><div class="sf-title" data-en="EXERCISE" data-ur="ورزش">EXERCISE</div><input type="range" class="sf-slider" id="sf3" min="0" max="10" value="4" oninput="calcStress()"/><div class="sf-val" id="sv3">4/10</div></div>
+    <div class="sf-card"><div class="sf-title" data-en="MOOD" data-ur="موڈ">MOOD</div><input type="range" class="sf-slider" id="sf4" min="0" max="10" value="6" oninput="calcStress()"/><div class="sf-val" id="sv4">6/10</div></div>
+  </div>
+  <div class="tips-box" id="stressAdvice">
+    <div class="tips-title" data-en="RECOMMENDATIONS" data-ur="سفارشات">RECOMMENDATIONS</div>
+    <div id="adviceList"></div>
+  </div>
 </div>
 
-<!-- INFO PILLS -->
-<div class="istrip">
-  <div class="ipill"><span class="ipicon">📡</span><div class="iptext"><strong>PPG Sensor</strong>Photoplethysmography</div></div>
-  <div class="ipill"><span class="ipicon">🔒</span><div class="iptext"><strong>Private</strong>Data stays local</div></div>
-  <div class="ipill"><span class="ipicon">⚡</span><div class="iptext"><strong>4 Seconds</strong>Fast scan</div></div>
+<!-- ══ PAGE: SLEEP ══ -->
+<div class="page" id="page-sleep">
+  <div class="sec-title" data-en="😴  SLEEP TRACKER" data-ur="😴  نیند ٹریکر">😴  SLEEP TRACKER</div>
+  <div class="sleep-form">
+    <div class="input-group" style="margin-bottom:16px"><label class="input-label" data-en="HOURS SLEPT" data-ur="نیند کے گھنٹے">HOURS SLEPT</label><div class="input-row"><input class="inp" type="number" id="sleepHours" placeholder="7" min="0" max="24" step="0.5"/><div class="inp-unit" data-en="hrs" data-ur="گھنٹے">hrs</div></div></div>
+    <div class="input-group" style="margin-bottom:16px"><label class="input-label" data-en="BEDTIME" data-ur="سونے کا وقت">BEDTIME</label><input class="inp" type="time" id="sleepBed" value="23:00" style="width:100%"/></div>
+    <div class="input-group" style="margin-bottom:16px"><label class="input-label" data-en="WAKE TIME" data-ur="جاگنے کا وقت">WAKE TIME</label><input class="inp" type="time" id="sleepWake" value="06:30" style="width:100%"/></div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--t3);margin-bottom:10px" data-en="SLEEP QUALITY" data-ur="نیند کا معیار">SLEEP QUALITY</div>
+    <div class="sq-grid">
+      <button class="sq-btn" onclick="setSQ(1,this)">😫<span data-en="Terrible" data-ur="بہت بری">Terrible</span></button>
+      <button class="sq-btn" onclick="setSQ(2,this)">😕<span data-en="Poor" data-ur="خراب">Poor</span></button>
+      <button class="sq-btn active" onclick="setSQ(3,this)">😐<span data-en="OK" data-ur="ٹھیک">OK</span></button>
+      <button class="sq-btn" onclick="setSQ(4,this)">😊<span data-en="Good" data-ur="اچھی">Good</span></button>
+      <button class="sq-btn" onclick="setSQ(5,this)">😴<span data-en="Great" data-ur="بہترین">Great</span></button>
+    </div>
+  </div>
+  <button class="calc-btn" onclick="analyzeSleep()" data-en="ANALYZE SLEEP" data-ur="نیند کا تجزیہ">ANALYZE SLEEP</button>
+  <div class="sleep-result" id="sleepResult">
+    <div class="sleep-score" id="sleepScore">--</div>
+    <div class="sleep-grade" id="sleepGrade">---</div>
+    <div class="sleep-stats">
+      <div class="s-stat"><span class="s-stat-val" id="statDuration">--</span><span class="s-stat-lbl" data-en="DURATION" data-ur="مدت">DURATION</span></div>
+      <div class="s-stat"><span class="s-stat-val" id="statDebt">--</span><span class="s-stat-lbl" data-en="SLEEP DEBT" data-ur="نیند کی کمی">SLEEP DEBT</span></div>
+      <div class="s-stat"><span class="s-stat-val" id="statEff">--</span><span class="s-stat-lbl" data-en="EFFICIENCY" data-ur="کارکردگی">EFFICIENCY</span></div>
+      <div class="s-stat"><span class="s-stat-val" id="statRec">7.5h</span><span class="s-stat-lbl" data-en="RECOMMENDED" data-ur="مشورہ">RECOMMENDED</span></div>
+    </div>
+  </div>
+  <div class="tips-box" id="sleepTips" style="display:none">
+    <div class="tips-title" data-en="SLEEP TIPS" data-ur="نیند کے مشورے">SLEEP TIPS</div>
+    <div id="sleepTipsList"></div>
+  </div>
 </div>
 
 <!-- FOOTER -->
+<div id="footerWrap" style="width:100%">
 <footer class="footer">
   <div class="ft-brand">
-    <div class="ft-icon">
-      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-    </div>
-    <div>
-      <span class="ft-bname">HealthScan Pro</span>
-      <span class="ft-bsub">BIOMETRIC HEALTH MONITOR</span>
-    </div>
+    <div class="ft-icon"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+    <div><span class="ft-bname">HealthScan Pro</span><span class="ft-bsub" data-en="BIOMETRIC HEALTH MONITOR" data-ur="بایومیٹرک ہیلتھ مانیٹر">BIOMETRIC HEALTH MONITOR</span></div>
   </div>
   <div class="ft-div"></div>
   <div class="ft-install">
-    <div>
-      <div class="ft-ititle">📲 Install as App</div>
-      <div class="ft-idesc" style="margin-top:4px">Works offline · Fast · No updates needed</div>
-    </div>
+    <div><div class="ft-ititle" data-en="📲 Install as App" data-ur="📲 ایپ انسٹال کریں">📲 Install as App</div><div class="ft-idesc" style="margin-top:4px" data-en="Works offline · Fast · No updates needed" data-ur="آف لائن · تیز · اپڈیٹ نہیں">Works offline · Fast · No updates needed</div></div>
     <div class="ft-feats">
-      <span class="ft-feat">✓ Offline mode</span>
-      <span class="ft-feat">✓ Home screen icon</span>
-      <span class="ft-feat">✓ Fullscreen</span>
+      <span class="ft-feat" data-en="✓ Offline mode" data-ur="✓ آف لائن">✓ Offline mode</span>
+      <span class="ft-feat" data-en="✓ Home screen icon" data-ur="✓ ہوم اسکرین">✓ Home screen icon</span>
+      <span class="ft-feat" data-en="✓ Fullscreen" data-ur="✓ فل اسکرین">✓ Fullscreen</span>
     </div>
-    <div class="install-status" id="installStatus">
-  <span id="installStatusDot" class="istatus-dot"></span>
-  <span id="installStatusText" class="istatus-text">Checking install availability...</span>
-</div>
+    <div class="istatus"><span class="idot" id="iDot"></span><span class="itxt" id="iTxt" data-en="Open in Chrome for install" data-ur="Chrome میں کھولیں">Open in Chrome for install</span></div>
     <button class="ibtn" id="ibtn">
       <span class="ibi">⬇️</span>
-      <div class="ibt">
-        <span class="ibmain">Install App</span>
-        <span class="ibsub">Add to Home Screen</span>
-      </div>
+      <div class="ibt"><span class="ibmain" data-en="Install App" data-ur="ایپ انسٹال کریں">Install App</span><span class="ibsub" data-en="Add to Home Screen" data-ur="ہوم اسکرین پر شامل کریں">Add to Home Screen</span></div>
       <span class="ibarr">›</span>
     </button>
   </div>
   <div class="ft-div"></div>
   <div class="ft-bottom">
-    <span class="ft-copy">© 2025 HealthScan Pro</span>
-    <span class="ft-ver">v2.4.0</span>
+    <span class="ft-copy">© 2025 HealthScan Pro · v3.0.0</span>
+  </div>
+  <div class="ft-dev">
+    <div class="ft-dev-inner">
+      <span class="ft-dev-label">DEVELOPED BY</span>
+      <span class="ft-dev-name">Muhammad Ali Hassan</span>
+      <div class="ft-dev-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
   </div>
 </footer>
+</div>
 
 </div><!-- /wrap -->
 <div class="toast" id="toast"></div>
-
-<script>
-const ri=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
-
-const state={
-  mode:'idle',progress:0,ptimer:null,wraf:null,wphase:0,
-  history:[],dprompt:null
-};
-
-const el=id=>document.getElementById(id);
-const E={
-  scard:el('scard'),score:el('score'),sicon:el('sicon'),
-  imain:el('imain'),isub:el('isub'),
-  progbox:el('progbox'),pfill:el('pfill'),ppct:el('ppct'),
-  cv:el('cv'),wbpm:el('wbpm'),
-  bpcard:el('bpcard'),bpbadge:el('bpbadge'),bpval:el('bpval'),
-  spo2card:el('spo2card'),spo2badge:el('spo2badge'),spo2val:el('spo2val'),
-  hrcard:el('hrcard'),hrval:el('hrval'),
-  tmpcard:el('tmpcard'),tmpval:el('tmpval'),
-  rspcard:el('rspcard'),rspval:el('rspval'),
-  hempty:el('hempty'),hlist:el('hlist'),
-  clearbtn:el('clearbtn'),toast:el('toast'),
-  clock:el('clock'),ibtn:el('ibtn'),
-};
-const ctx=E.cv.getContext('2d');
-
-// ── Clock ──
-function tick(){
-  E.clock.textContent=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-}
-tick(); setInterval(tick,1000);
-
-// ── Toast ──
-let _tt;
-function toast(msg){
-  E.toast.textContent=msg;E.toast.classList.add('show');
-  clearTimeout(_tt);_tt=setTimeout(()=>E.toast.classList.remove('show'),2800);
-}
-
-// ── Animate value ──
-function vin(el){el.classList.remove('vin');void el.offsetWidth;el.classList.add('vin');setTimeout(()=>el.classList.remove('vin'),500)}
-
-// ── Sensor events ──
-E.score.addEventListener('mousedown',fingerDown);
-E.score.addEventListener('touchstart',e=>{e.preventDefault();fingerDown();},{passive:false});
-document.addEventListener('mouseup',fingerUp);
-document.addEventListener('touchend',fingerUp);
-
-function fingerDown(){
-  if(state.mode==='measuring')return;
-  state.mode='measuring';
-  E.score.classList.add('touched','measuring');
-  E.scard.classList.add('measuring');
-  E.sicon.textContent='☝️';
-  E.imain.textContent='Finger Detected';
-  E.isub.textContent='Hold still — scanning...';
-  E.progbox.style.display='block';
-  state.progress=0;
-  drawWave(true);
-  let step=0;const steps=80;
-  state.ptimer=setInterval(()=>{
-    step++;state.progress=Math.min(100,Math.round(step/steps*100));
-    E.pfill.style.width=state.progress+'%';
-    E.ppct.textContent=state.progress+'%';
-    if(state.progress>=100){clearInterval(state.ptimer);finish();}
-  },50);
-}
-
-function fingerUp(){
-  if(state.mode!=='measuring')return;
-  clearInterval(state.ptimer);
-  reset();toast('⚠  Finger removed — try again');
-}
-
-function finish(){
-  const bp=genBP(),spo2=genSpO2(),hr=genHR(),tmp=genTemp(),rsp=ri(12,20);
-  state.mode='done';
-  E.score.classList.remove('measuring','touched');
-  E.scard.classList.remove('measuring');
-
-  // BP
-  E.bpval.textContent=`${bp.sys}/${bp.dia}`;
-  E.bpval.classList.remove('dim');vin(E.bpval);
-  E.bpcard.classList.add('ready');
-  badge(E.bpbadge,bp.label);
-
-  // SpO2
-  E.spo2val.textContent=`${spo2.val}%`;
-  E.spo2val.classList.remove('dim');vin(E.spo2val);
-  E.spo2card.classList.add('ready');
-  badge(E.spo2badge,spo2.label);
-
-  // Extra
-  E.hrval.textContent=hr;E.hrval.classList.remove('dim');vin(E.hrval);E.hrcard.classList.add('ready');
-  E.tmpval.textContent=tmp;E.tmpval.classList.remove('dim');vin(E.tmpval);E.tmpcard.classList.add('ready');
-  E.rspval.textContent=rsp;E.rspval.classList.remove('dim');vin(E.rspval);E.rspcard.classList.add('ready');
-  E.wbpm.textContent=hr+' BPM';
-
-  addHistory(bp,spo2,hr);
-  toast('✓  Scan complete');
-  E.sicon.textContent='✅';
-  E.imain.textContent='Scan Complete';
-  E.isub.textContent='Touch sensor again for new reading';
-  E.progbox.style.display='none';E.pfill.style.width='0%';
-}
-
-function reset(){
-  state.mode='idle';state.progress=0;
-  E.score.classList.remove('touched','measuring');
-  E.scard.classList.remove('active','measuring');
-  E.sicon.textContent='👆';
-  E.imain.textContent='Place Your Finger Here';
-  E.isub.textContent='Touch & hold the sensor to begin scan';
-  E.progbox.style.display='none';E.pfill.style.width='0%';
-  drawWave(false);
-}
-
-function badge(el,label){
-  el.textContent=label;el.className='mbadge';
-  if(label==='NORMAL')el.classList.add('ok');
-  else if(label==='ELEVATED'||label==='LOW')el.classList.add('warn');
-  else el.classList.add('bad');
-}
-
-// ── Generators ──
-function genBP(){
-  const r=Math.random();
-  if(r<.55)return{sys:ri(110,129),dia:ri(70,84),label:'NORMAL'};
-  if(r<.75)return{sys:ri(130,139),dia:ri(80,89),label:'ELEVATED'};
-  if(r<.88)return{sys:ri(140,159),dia:ri(90,99),label:'HIGH'};
-  if(r<.95)return{sys:ri(160,175),dia:ri(100,110),label:'STAGE 2'};
-  return{sys:ri(90,109),dia:ri(60,69),label:'LOW'};
-}
-function genSpO2(){
-  const r=Math.random();
-  if(r<.75)return{val:ri(97,100),label:'NORMAL'};
-  if(r<.90)return{val:ri(95,96),label:'NORMAL'};
-  if(r<.97)return{val:ri(92,94),label:'LOW'};
-  return{val:ri(88,91),label:'CRITICAL'};
-}
-function genHR(){
-  const r=Math.random();
-  if(r<.6)return ri(65,85);if(r<.8)return ri(55,64);
-  if(r<.95)return ri(86,100);return ri(101,115);
-}
-function genTemp(){return(36.1+Math.random()*1.1).toFixed(1);}
-
-// ── ECG Wave ──
-function drawWave(active){
-  if(state.wraf){cancelAnimationFrame(state.wraf);state.wraf=null;}
-  const W=E.cv.width=E.cv.offsetWidth*(window.devicePixelRatio||1);
-  const H=E.cv.height=70*(window.devicePixelRatio||1);
-  const draw=()=>{
-    ctx.clearRect(0,0,W,H);
-    const mid=H/2;
-    if(!active){
-      ctx.strokeStyle='rgba(0,229,255,.18)';ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.moveTo(0,mid);ctx.lineTo(W,mid);ctx.stroke();
-      return;
-    }
-    state.wphase+=.055;
-    const g=ctx.createLinearGradient(0,0,W,0);
-    g.addColorStop(0,'rgba(0,255,136,0)');g.addColorStop(.15,'rgba(0,255,136,.9)');
-    g.addColorStop(.85,'rgba(0,229,255,.9)');g.addColorStop(1,'rgba(0,229,255,0)');
-    ctx.strokeStyle=g;ctx.lineWidth=2;ctx.shadowColor='rgba(0,255,136,.7)';ctx.shadowBlur=10;
-    ctx.beginPath();
-    for(let x=0;x<=W;x++){
-      const c=((x/W*5+state.wphase/(2*Math.PI))%1);
-      let y=mid;
-      if(c>.38&&c<.41)y=mid-H*.18*Math.sin((c-.38)/.03*Math.PI);
-      else if(c>.48&&c<.495)y=mid-H*.07;
-      else if(c>.495&&c<.515)y=mid+H*.13;
-      else if(c>.515&&c<.535)y=mid-H*.45;
-      else if(c>.535&&c<.555)y=mid+H*.10;
-      else if(c>.62&&c<.72)y=mid-H*.09*Math.sin((c-.62)/.10*Math.PI);
-      else y=mid+Math.sin(state.wphase*.3+x*.002)*2;
-      x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-    }
-    ctx.stroke();ctx.shadowBlur=0;
-    state.wraf=requestAnimationFrame(draw);
-  };
-  draw();
-}
-drawWave(false);
-
-// ── History ──
-function addHistory(bp,spo2,hr){
-  const t=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-  state.history.unshift({bp,spo2,hr,t});
-  if(state.history.length>10)state.history=state.history.slice(0,10);
-  renderHistory();saveHistory();
-}
-function renderHistory(){
-  if(!state.history.length){E.hempty.style.display='block';E.hlist.innerHTML='';return;}
-  E.hempty.style.display='none';
-  E.hlist.innerHTML=state.history.map((h,i)=>`
-    <div class="hitem">
-      <span class="hnum">#${i+1}</span>
-      <span class="hbp">🩸 ${h.bp.sys}/${h.bp.dia}</span>
-      <span class="hspo2">💧 ${h.spo2.val}%</span>
-      <span class="htime">${h.t}</span>
-    </div>`).join('');
-}
-E.clearbtn.onclick=()=>{state.history=[];renderHistory();try{localStorage.removeItem('hs')}catch(e){}toast('🗑  History cleared')};
-function saveHistory(){try{localStorage.setItem('hs',JSON.stringify(state.history))}catch(e){}}
-try{const d=localStorage.getItem('hs');if(d){state.history=JSON.parse(d);renderHistory();}}catch(e){}
-
-// ── PWA Install ──
-const iStatus = el('installStatus');
-const iDot = el('installStatusDot');
-const iTxt = el('installStatusText');
-
-function setInstallReady(){
-  iDot.className='istatus-dot ready';
-  iTxt.className='istatus-text ready';
-  iTxt.textContent='Ready to install — tap the button below';
-}
-function setInstallDone(){
-  iDot.className='istatus-dot installed';
-  iTxt.className='istatus-text installed';
-  iTxt.textContent='App is installed on your device';
-  E.ibtn.classList.add('done');
-  E.ibtn.querySelector('.ibmain').textContent='App Installed ✓';
-  E.ibtn.querySelector('.ibsub').textContent='Open from your Home Screen';
-  E.ibtn.querySelector('.ibi').textContent='✅';
-}
-
-// Check if already installed
-if(window.matchMedia('(display-mode: standalone)').matches){
-  setInstallDone();
-} else {
-  iTxt.textContent='Open in Chrome for install option';
-}
-
-window.addEventListener('beforeinstallprompt',e=>{
-  e.preventDefault();state.dprompt=e;
-  E.ibtn.classList.remove('done');
-  setInstallReady();
-});
-window.addEventListener('appinstalled',()=>{
-  setInstallDone();
-  toast('✓  HealthScan Pro installed successfully!');
-  state.dprompt=null;
-});
-E.ibtn.addEventListener('click',async()=>{
-  if(state.dprompt){
-    state.dprompt.prompt();
-    const{outcome}=await state.dprompt.userChoice;
-    if(outcome==='accepted') setInstallDone();
-    state.dprompt=null;
-  } else if(window.matchMedia('(display-mode: standalone)').matches){
-    toast('✓  App already installed & running!');
-  } else {
-    const iOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
-    if(iOS){
-      toast('📲  Safari: Tap Share → Add to Home Screen');
-    } else {
-      toast('📲  Chrome: Menu (⋮) → Install App');
-    }
-  }
-});
-
-// ── Service Worker Registration ──
-if('serviceWorker' in navigator){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(r => console.log('SW registered'))
-      .catch(e => console.log('SW error:', e));
-  });
-}
-
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
