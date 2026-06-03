@@ -156,7 +156,6 @@ canvas{width:100%;height:70px;display:block}
 .bmi-big{font-family:'Orbitron',monospace;font-size:48px;font-weight:900;color:var(--cyan);text-shadow:var(--gcyan)}
 .bmi-cat{font-family:'Orbitron',monospace;font-size:12px;letter-spacing:1px;padding:8px 14px;border-radius:20px}
 .bmi-bar-wrap{width:100%;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;margin-bottom:8px}
-.bmi-bar{height:100%;border-radius:4px;transition:width .8s ease}
 .bmi-scale{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--t3)}
 /* TIPS */
 .tips-box{width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px}
@@ -423,4 +422,318 @@ input[type='time']{color-scheme:dark;color:var(--t1)}
   /* Reset colors for print */
   .mval, .eval, .bpbadge, .spo2badge { color: black !important; text-shadow: none !important; }
   .mcard, .ecard, .mgrid, .egrid { background: white !important; border: 1px solid #ccc !important; }
+}
+
+
+/* ══════════════════════════════════
+   WATER INTAKE TRACKER
+══════════════════════════════════ */
+
+/* Goal Card */
+.water-goal-card {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 14px;
+}
+
+/* Circle */
+.water-circle-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+.water-svg { width: 100%; height: 100%; }
+.water-circle-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+.water-ml {
+  font-family: 'Orbitron', monospace;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--cyan);
+  text-shadow: var(--gcyan);
+  line-height: 1;
+}
+.water-unit-lbl {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--t3);
+  letter-spacing: 1px;
+}
+.water-pct {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  text-shadow: var(--ggreen);
+}
+
+/* Stats column */
+.water-stats-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.water-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(0,229,255,0.06);
+}
+.water-stat-item:last-child { border-bottom: none; }
+.wsi-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: var(--t3);
+}
+.wsi-val {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+.wsi-status { font-size: 9px; }
+
+/* Goal setter row */
+.water-goal-row {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.water-set-btn {
+  background: linear-gradient(135deg, rgba(0,229,255,.2), rgba(0,229,255,.05));
+  border: 1px solid rgba(0,229,255,.35);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--cyan);
+  cursor: pointer;
+  transition: all .25s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.water-set-btn:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 15px rgba(0,229,255,.2);
+}
+
+/* Quick add grid */
+.water-quick-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.wq-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all .25s;
+  -webkit-tap-highlight-color: transparent;
+}
+.wq-btn:hover, .wq-btn:active {
+  border-color: rgba(0,229,255,.5);
+  background: rgba(0,229,255,.08);
+  transform: scale(1.03);
+  box-shadow: 0 0 15px rgba(0,229,255,.15);
+}
+.wq-icon { font-size: 22px; line-height: 1; }
+.wq-ml {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+.wq-lbl {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  color: var(--t3);
+  letter-spacing: .5px;
+}
+
+/* Custom amount row */
+.water-custom-row {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.water-add-btn {
+  background: linear-gradient(135deg, #00c8e0, #0095b5);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #001422;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all .25s;
+  box-shadow: 0 0 15px rgba(0,200,224,.3);
+}
+.water-add-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 25px rgba(0,200,224,.5);
+.water-log-card {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.water-log-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.water-log-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--t2);
+}
+.water-log-empty {
+  text-align: center;
+  padding: 16px;
+  color: var(--t3);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+.water-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.wlog-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg-panel);
+  border: 1px solid rgba(0,229,255,.06);
+  border-radius: 10px;
+  animation: slin .25s ease;
+}
+.wlog-icon { font-size: 16px; flex-shrink: 0; }
+.wlog-amount {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cyan);
+  flex: 1;
+}
+.wlog-time {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--t3);
+}
+.wlog-del {
+  background: none;
+  border: none;
+  color: var(--t3);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.wlog-del:hover { color: var(--red); background: rgba(255,51,102,.1); }
+@keyframes waterComplete {
+  0%,100% { filter: drop-shadow(0 0 8px rgba(0,255,136,.4)); }
+  50%      { filter: drop-shadow(0 0 20px rgba(0,255,136,.8)); }
+}
+.water-ml.complete { color: var(--green); animation: waterComplete 1.5s ease-in-out infinite; }
+
+/* ══════════════════════════════════
+   STRESS RESULT CARD
+══════════════════════════════════ */
+
+/* ══════════════════════════════════
+   CALORIE TRACKER
+══════════════════════════════════ */
+.burn-btn:hover,.burn-btn:active {
+  border-color:rgba(0,255,136,.5)!important;
+  background:rgba(0,255,136,.08)!important;
+  box-shadow:0 0 12px rgba(0,255,136,.15)!important;
+}
+
+/* ══════════════════════════════════
+   HEALTH SCORE
+══════════════════════════════════ */
+@keyframes scoreGlow {
+  0%,100%{filter:drop-shadow(0 0 8px rgba(0,229,255,.3))}
+  50%{filter:drop-shadow(0 0 24px rgba(0,229,255,.7))}
+}
+
+/* STRESS RESULT CARD */
+.stress-result-card{width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px}
+.stress-result-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sr-item{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg-panel);border:1px solid rgba(0,229,255,.08);border-radius:12px;padding:12px 8px}
+.sr-label{font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:2px;color:var(--t3)}
+.sr-val{font-family:'Orbitron',monospace;font-size:16px;font-weight:700;color:var(--cyan);text-shadow:var(--gcyan)}
+
+/* CALORIE TRACKER */
+.cal-summary-card{width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:18px;display:flex;align-items:center;gap:16px;margin-bottom:14px}
+.cal-ring-wrap{position:relative;width:120px;height:120px;flex-shrink:0}
+.cal-ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.cal-num{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:var(--orange);line-height:1}
+.cal-unit{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--t3);letter-spacing:1px}
+.cal-pct{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--red)}
+.cal-stats-col{flex:1;display:flex;flex-direction:column;gap:8px}
+.orange-val{color:var(--orange)!important}
+.cal-quick-grid{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.burn-btn:hover,.burn-btn:active{border-color:rgba(0,255,136,.5)!important;background:rgba(0,255,136,.08)!important}
+
+/* HEALTH SCORE */
+.hs-main-card{width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:22px 20px;margin-bottom:16px;display:flex;flex-direction:column;gap:0}
+.hs-score-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;padding-bottom:18px;border-bottom:1px solid rgba(0,229,255,0.08);margin-bottom:16px}
+.hs-big-score{font-family:'Orbitron',monospace;font-size:60px;font-weight:900;color:var(--cyan);text-shadow:var(--gcyan);line-height:1;transition:color 0.5s}
+.hs-score-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:4px;color:var(--t3)}
+.hs-grade{font-family:'Orbitron',monospace;font-size:13px;letter-spacing:2px;color:var(--t2)}
+.hs-breakdown{display:flex;flex-direction:column;gap:10px}
+.hs-bar-item{display:grid;grid-template-columns:55px 1fr 32px;align-items:center;gap:8px}
+.hs-bar-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--t3)}
+.hs-bar-track{height:7px;background:rgba(0,229,255,.08);border-radius:4px;overflow:hidden}
+.hs-bar-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--green));border-radius:3px;transition:width 1s ease}
+.spo2-bar{background:linear-gradient(90deg,#00e5ff,#8b5cf6)}
+.bmi-bar{background:linear-gradient(90deg,#ff8c00,#00ff88)}
+.stress-bar{background:linear-gradient(90deg,#00ff88,#ff8c00)}
+.sleep-bar{background:linear-gradient(90deg,#8b5cf6,#00e5ff)}
+.water-bar{background:linear-gradient(90deg,#00e5ff,#00ff88)}
+.hs-bar-score{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:var(--cyan);text-align:right;min-width:28px}
 }
