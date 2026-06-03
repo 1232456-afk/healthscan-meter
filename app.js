@@ -138,21 +138,47 @@ function badge(e,l){
 
 // ══════════ GENERATORS ══════════
 function genBP(){
+  // Realistic: 70% normal, 15% slightly elevated, 8% high, 4% low, 3% very high
+  // Consecutive readings vary by max ±8 mmHg (realistic home monitor variation)
   const r=Math.random();
-  if(r<.55)return{sys:ri(110,129),dia:ri(70,84),label:t('bp_normal')};
-  if(r<.75)return{sys:ri(130,139),dia:ri(80,89),label:t('bp_elevated')};
-  if(r<.88)return{sys:ri(140,159),dia:ri(90,99),label:t('bp_high')};
-  if(r<.95)return{sys:ri(160,175),dia:ri(100,110),label:t('bp_stage2')};
-  return{sys:ri(90,109),dia:ri(60,69),label:t('bp_low')};
+  let sys,dia,label;
+  if(r<0.70){
+    // Normal: 110-129 / 70-84
+    sys=ri(110,129); dia=ri(70,84); label=t('bp_normal');
+  } else if(r<0.85){
+    // Elevated: 130-139 / 80-89
+    sys=ri(130,139); dia=ri(80,89); label=t('bp_elevated');
+  } else if(r<0.93){
+    // Stage 1 High: 140-149 / 90-95
+    sys=ri(140,149); dia=ri(90,95); label=t('bp_high');
+  } else if(r<0.97){
+    // Low: 95-109 / 60-69
+    sys=ri(95,109); dia=ri(60,69); label=t('bp_low');
+  } else {
+    // Stage 2 High: 150-165 / 96-105 (very rare — 3%)
+    sys=ri(150,165); dia=ri(96,105); label=t('bp_stage2');
+  }
+  // Add small natural variation (±4 mmHg) to simulate real measurement
+  sys += ri(-3,3); dia += ri(-2,2);
+  return {sys,dia,label};
 }
 function genSpO2(){
+  // Healthy adults: 95-100% most of the time
   const r=Math.random();
-  if(r<.75)return{val:ri(97,100),label:t('spo2_normal')};
-  if(r<.90)return{val:ri(95,96),label:t('spo2_normal')};
-  if(r<.97)return{val:ri(92,94),label:t('spo2_low')};
+  if(r<0.80)return{val:ri(97,100),label:t('spo2_normal')};
+  if(r<0.94)return{val:ri(95,96),label:t('spo2_normal')};
+  if(r<0.98)return{val:ri(92,94),label:t('spo2_low')};
   return{val:ri(88,91),label:t('spo2_critical')};
 }
-function genHR(){const r=Math.random();if(r<.6)return ri(65,85);if(r<.8)return ri(55,64);if(r<.95)return ri(86,100);return ri(101,115);}
+function genHR(){
+  // Resting HR: 60-80 most common for adults
+  const r=Math.random();
+  if(r<0.65)return ri(62,78);   // normal resting
+  if(r<0.82)return ri(55,62);   // athletic/low-normal
+  if(r<0.93)return ri(79,95);   // slightly elevated
+  if(r<0.98)return ri(96,110);  // elevated
+  return ri(110,120);            // high (rare)
+}
 function genTemp(){return(36.1+Math.random()*1.1).toFixed(1);}
 
 // ══════════ ECG WAVE ══════════
@@ -216,139 +242,187 @@ async function exportPDF(){
   try{
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    const W=210,PH=297;
-    const now=new Date();
+    const PW=210, PH=297, now=new Date();
+    const ML=12;   // margin left
+    const CW=PW-ML*2; // content width = 186mm
 
-    // Background
-    doc.setFillColor(2,8,16);doc.rect(0,0,W,PH,'F');
+    // ── Background
+    doc.setFillColor(2,8,16); doc.rect(0,0,PW,PH,'F');
 
-    // Header
-    doc.setFillColor(5,15,30);doc.rect(0,0,W,26,'F');
-    doc.setDrawColor(0,229,255);doc.setLineWidth(0.5);doc.line(0,26,W,26);
-    doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(0,229,255);
-    doc.text('HEALTHSCAN PRO',14,11);
-    doc.setFontSize(7);doc.setTextColor(58,106,132);doc.setFont('helvetica','normal');
-    doc.text('BIOMETRIC MEDICAL REPORT',14,18);
-    doc.setFontSize(7);doc.setTextColor(122,184,212);
-    doc.text(now.toLocaleString(),W-12,11,{align:'right'});
-    doc.text('Auto-generated',W-12,18,{align:'right'});
+    // ── Header
+    doc.setFillColor(5,15,30); doc.rect(0,0,PW,24,'F');
+    doc.setDrawColor(0,229,255); doc.setLineWidth(0.5); doc.line(0,24,PW,24);
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(0,229,255);
+    doc.text('HEALTHSCAN PRO', ML, 13);
+    doc.setFontSize(7); doc.setTextColor(58,106,132); doc.setFont('helvetica','normal');
+    doc.text('BIOMETRIC MEDICAL REPORT', ML, 20);
+    doc.setFontSize(7); doc.setTextColor(122,184,212);
+    doc.text(now.toLocaleString(), PW-ML, 13, {align:'right'});
+    doc.text('Auto-generated', PW-ML, 20, {align:'right'});
 
-    let y=32;
-    const LPAD=14, VPAD=65, ROW=6.2;
+    let y = 30;
+    const ROW = 6.0;  // row height
+    const COL1_LBL = ML+2;       // label col1 x
+    const COL1_VAL = ML+42;      // value col1 x  (42mm from left)
+    const COL2_LBL = ML+2+CW/2;  // label col2 x  (mid point)
+    const COL2_VAL = ML+42+CW/2; // value col2 x
 
     // Section header
     const sec=(title,r,g,b)=>{
-      doc.setFillColor(5,15,30);doc.roundedRect(8,y,W-16,7,1.5,1.5,'F');
-      doc.setDrawColor(r,g,b);doc.setLineWidth(0.35);doc.roundedRect(8,y,W-16,7,1.5,1.5,'S');
-      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(r,g,b);
-      doc.text(title,LPAD,y+5);y+=10;
+      doc.setFillColor(5,15,30);
+      doc.roundedRect(ML,y,CW,7,1.5,1.5,'F');
+      doc.setDrawColor(r,g,b); doc.setLineWidth(0.35);
+      doc.roundedRect(ML,y,CW,7,1.5,1.5,'S');
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(r,g,b);
+      doc.text(title, ML+3, y+4.8);
+      y += 10;
     };
-    // Data row
+
+    // Single full-width row
     const row=(lbl,val,unit,vr,vg,vb)=>{
-      doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(58,106,132);
-      doc.text(lbl,LPAD+2,y);
-      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(vr,vg,vb);
-      doc.text(String(val),VPAD,y);
-      if(unit){doc.setFontSize(6.5);doc.setTextColor(122,184,212);doc.text(unit,VPAD+22,y);}
-      y+=ROW;
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(58,106,132);
+      doc.text(lbl, COL1_LBL, y);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(vr,vg,vb);
+      doc.text(String(val), COL1_VAL, y);
+      if(unit){ doc.setFontSize(6.5); doc.setTextColor(122,184,212); doc.text(unit, COL1_VAL+20, y); }
+      y += ROW;
     };
-    const gap=(n=2)=>{y+=n;};
 
-    // ── 1. VITAL SIGNS (5 rows)
-    sec('VITAL SIGNS',0,229,255);
-    row('Systolic BP',S.lastBP.sys,'mmHg',255,80,100);
-    row('Diastolic BP',S.lastBP.dia,'mmHg',255,140,0);
-    row('BP Status',S.lastBP.label,'',255,200,100);
-    row('Blood Oxygen (SpO2)',S.lastSpO2.val+'%','',0,229,255);
-    row('SpO2 Status',S.lastSpO2.label,'',0,200,180);
+    // Two-column row — properly spaced so no overlap
+    const row2=(lbl1,val1,lbl2,val2,r1,g1,b1,r2,g2,b2)=>{
+      // Left half
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(58,106,132);
+      doc.text(lbl1, COL1_LBL, y);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(r1,g1,b1);
+      doc.text(String(val1), COL1_VAL, y);
+      // Right half
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(58,106,132);
+      doc.text(lbl2, COL2_LBL, y);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(r2,g2,b2);
+      doc.text(String(val2), COL2_VAL, y);
+      y += ROW;
+    };
+
+    const gap=(n=2)=>{ y+=n; };
+
+    // ══ 1. VITAL SIGNS
+    sec('VITAL SIGNS', 0,229,255);
+    row2('Systolic BP', S.lastBP.sys+' mmHg', 'Diastolic BP', S.lastBP.dia+' mmHg', 255,80,100, 255,140,0);
+    row2('BP Status', S.lastBP.label, 'Blood Oxygen', S.lastSpO2.val+'%', 255,200,100, 0,229,255);
+    row('SpO2 Status', S.lastSpO2.label, '', 0,200,180);
     gap();
 
-    // ── 2. ADDITIONAL METRICS (3 rows)
-    sec('ADDITIONAL METRICS',0,255,136);
-    row('Heart Rate',S.lastHR,'BPM',255,100,150);
-    row('Body Temperature',S.lastTemp,'°C',255,200,80);
-    row('Respiratory Rate',S.lastRsp,'/min',0,229,255);
+    // ══ 2. ADDITIONAL METRICS
+    sec('ADDITIONAL METRICS', 0,255,136);
+    row2('Heart Rate', S.lastHR+' BPM', 'Body Temp', S.lastTemp+' °C', 255,100,150, 255,200,80);
+    row('Respiratory Rate', S.lastRsp+' /min', '', 0,229,255);
     gap();
 
-    // ── 3. BMI (5 rows if available)
-    const bh=G('bmiHeight').value,bw=G('bmiWeight').value;
-    if(bh&&bw){
+    // ══ 3. BMI
+    const bh=G('bmiHeight').value, bw=G('bmiWeight').value;
+    if(bh && bw){
       const bmi=(bw/((bh/100)**2)).toFixed(1);
       const bf=bmiGender==='female';
       const cat=bmi<18.5?'Underweight':bmi<(bf?24:25)?'Normal Weight':bmi<(bf?29:30)?'Overweight':'Obese';
-      sec('BMI DATA',255,140,0);
-      row('Gender',bmiGender==='female'?'Female':'Male','',224,244,255);
-      row('Height / Weight',bh+'cm  /  '+bw+'kg','',224,244,255);
-      row('BMI Score',bmi,'',255,140,0);
-      row('BMI Category',cat,'',255,180,50);
+      sec('BMI DATA', 255,140,0);
+      row2('Gender', bmiGender==='female'?'Female':'Male', 'BMI Score', bmi, 224,244,255, 255,140,0);
+      row2('Height', bh+' cm', 'Weight', bw+' kg', 224,244,255, 224,244,255);
+      row('BMI Category', cat, '', 255,180,50);
       gap();
     }
 
-    // ── 4. STRESS (6 rows)
-    const sf1=G('sf1'),sf2=G('sf2'),sf3=G('sf3'),sf4=G('sf4');
-    if(sf1){
-      const sleep=+sf1.value,work=+sf2.value,ex=+sf3.value,mood=+sf4.value;
-      const raw=(10-sleep)*2.0+work*2.2-ex*1.8-mood*1.4+20;
+    // ══ 4. STRESS
+    const sf1el=G('sf1');
+    if(sf1el){
+      const sl=+sf1el.value, wk=+G('sf2').value, ex=+G('sf3').value, md=+G('sf4').value;
+      const raw=(10-sl)*2.0+wk*2.2-ex*1.8-md*1.4+20;
       const stress=Math.max(0,Math.min(100,Math.round(raw)));
       const lvl=stress<30?'Low':stress<60?'Moderate':'High';
       const sc=stress<30?[0,255,136]:stress<60?[255,140,0]:[255,51,102];
-      sec('STRESS ANALYSIS',sc[0],sc[1],sc[2]);
-      row('Sleep / Work / Exercise / Mood',sleep+'h  '+work+'/10  '+ex+'/10  '+mood+'/10','',122,184,212);
-      row('Stress Score',stress+'/100','',sc[0],sc[1],sc[2]);
-      row('Stress Level',lvl,'',sc[0],sc[1],sc[2]);
+      sec('STRESS ANALYSIS', sc[0],sc[1],sc[2]);
+      row2('Sleep Hours', sl+'h', 'Workload', wk+'/10', 122,184,212, 255,140,0);
+      row2('Exercise', ex+'/10', 'Mood', md+'/10', 0,200,136, 139,92,246);
+      row2('Stress Score', stress+'/100', 'Level', lvl, sc[0],sc[1],sc[2], sc[0],sc[1],sc[2]);
       gap();
     }
 
-    // ── 5. SLEEP (6 rows if analyzed)
-    const shEl=G('sleepScore'),sleepHrsEl=G('sleepHours');
-    if(sleepHrsEl&&sleepHrsEl.value&&shEl&&shEl.textContent!=='--'){
-      const hrs=parseFloat(sleepHrsEl.value)||0;
-      const score=shEl.textContent;
+    // ══ 5. SLEEP
+    const sleepHrsEl=G('sleepHours'), sleepScoreEl=G('sleepScore');
+    if(sleepHrsEl && sleepHrsEl.value && sleepScoreEl && sleepScoreEl.textContent!=='--'){
+      const hrs=parseFloat(sleepHrsEl.value);
+      const score=sleepScoreEl.textContent;
       const grade=G('sleepGrade')?G('sleepGrade').textContent:'--';
       const debt=G('statDebt')?G('statDebt').textContent:'--';
       const eff=G('statEff')?G('statEff').textContent:'--';
+      const qn=['','Terrible','Poor','OK','Good','Great'];
       const sc2=score>=80?[0,255,136]:score>=55?[0,229,255]:[255,140,0];
-      const qNames=['','Terrible','Poor','OK','Good','Great'];
-      sec('SLEEP ANALYSIS',sc2[0],sc2[1],sc2[2]);
-      row('Hours Slept / Quality',hrs+'h  |  '+(qNames[sleepQ]||sleepQ),'',0,229,255);
-      row('Sleep Score / Grade',score+'/100  |  '+grade,'',sc2[0],sc2[1],sc2[2]);
-      row('Sleep Debt / Efficiency',debt+'  |  '+eff,'',255,140,0);
+      sec('SLEEP ANALYSIS', sc2[0],sc2[1],sc2[2]);
+      row2('Hours Slept', hrs+'h', 'Quality', qn[sleepQ]||sleepQ, 0,229,255, 139,92,246);
+      row2('Sleep Score', score+'/100', 'Grade', grade, sc2[0],sc2[1],sc2[2], sc2[0],sc2[1],sc2[2]);
+      row2('Sleep Debt', debt, 'Efficiency', eff, 255,140,0, 0,200,136);
       gap();
     }
 
-    // ── 6. HISTORY (compact table)
-    if(S.history.length>0){
-      sec('READING HISTORY',139,92,246);
-      doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor(58,106,132);
-      doc.text('#',LPAD+2,y);doc.text('Blood Pressure',LPAD+10,y);
-      doc.text('SpO2',LPAD+55,y);doc.text('HR',LPAD+75,y);doc.text('Time',W-18,y,{align:'right'});
-      y+=4;
-      doc.setDrawColor(20,50,80);doc.setLineWidth(0.15);doc.line(LPAD,y,W-LPAD,y);y+=3.5;
-      S.history.slice(0,8).forEach((h,i)=>{
-        doc.setFont('helvetica','normal');doc.setFontSize(7);
-        doc.setTextColor(58,106,132);doc.text('#'+(i+1),LPAD+2,y);
-        doc.setTextColor(255,80,100);doc.text(h.bp.sys+'/'+h.bp.dia,LPAD+10,y);
-        doc.setTextColor(0,229,255);doc.text(h.spo2.val+'%',LPAD+55,y);
-        doc.setTextColor(139,92,246);doc.text(h.hr+'',LPAD+75,y);
-        doc.setTextColor(58,106,132);doc.text(h.time,W-18,y,{align:'right'});
-        y+=5.2;
-      });
+    // ══ 6. WATER
+    if(W.total>0){
+      const wpct=Math.round(W.total/W.goal*100);
+      const wrem=Math.max(0,W.goal-W.total);
+      const wsc=wpct>=100?[0,255,136]:wpct>=50?[0,229,255]:[255,140,0];
+      sec('WATER INTAKE', wsc[0],wsc[1],wsc[2]);
+      row2('Total Intake', W.total+' ml', 'Daily Goal', W.goal+' ml', 0,229,255, 0,229,255);
+      row2('Remaining', wrem+' ml', 'Progress', wpct+'%', 255,140,0, wsc[0],wsc[1],wsc[2]);
+      row('Glasses Consumed', Math.round(W.total/250)+' glasses', '', 0,200,180);
+      gap();
     }
 
-    // Footer
-    doc.setFillColor(5,15,30);doc.rect(0,PH-12,W,12,'F');
-    doc.setDrawColor(0,229,255);doc.setLineWidth(0.25);doc.line(0,PH-12,W,PH-12);
-    doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor(0,229,255);
-    doc.text('HealthScan Pro v3.0',LPAD,PH-9);
-    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(0,200,180);
-    doc.text('Developed by Muhammad Ali Hassan',W/2,PH-9,{align:'center'});
-    doc.setFont('helvetica','normal');doc.setFontSize(5.5);doc.setTextColor(58,106,132);
-    doc.text('For informational use only. Consult a licensed physician.',LPAD,PH-4);
-    doc.setTextColor(122,184,212);doc.text(now.toLocaleDateString(),W-LPAD,PH-4,{align:'right'});
+    // ══ 7. CALORIES
+    if(CAL.total>0 || CAL.burned>0){
+      const cpct=Math.round(CAL.total/CAL.goal*100);
+      const cnet=CAL.total-CAL.burned;
+      const csc=cpct>110?[255,51,102]:cpct>=80?[255,140,0]:[0,229,255];
+      sec('CALORIE TRACKING', csc[0],csc[1],csc[2]);
+      row2('Calories Consumed', CAL.total+' kcal', 'Calories Burned', CAL.burned+' kcal', 255,140,0, 0,200,136);
+      row2('Daily Goal', CAL.goal+' kcal', 'Net Calories', cnet+' kcal', 0,229,255, csc[0],csc[1],csc[2]);
+      row('Progress', cpct+'% of daily goal', '', csc[0],csc[1],csc[2]);
+      gap();
+    }
+
+    // ══ 8. HEALTH SCORE
+    const hsBig=G('hsBigScore');
+    if(hsBig && hsBig.textContent!=='--'){
+      const overall=parseInt(hsBig.textContent)||0;
+      const grade=G('hsGrade')?G('hsGrade').textContent:'--';
+      const sc3=overall>=85?[0,255,136]:overall>=70?[0,229,255]:overall>=55?[255,140,0]:[255,51,102];
+      sec('OVERALL HEALTH SCORE', sc3[0],sc3[1],sc3[2]);
+      row2('Health Score', overall+'/100', 'Grade', grade, sc3[0],sc3[1],sc3[2], 200,200,200);
+      const bars=[
+        ['BP Score',G('hsBPScore')],['SpO2',G('hsSpO2Score')],
+        ['BMI',G('hsBMIScore')],['Stress',G('hsStressScore')],
+        ['Sleep',G('hsSleepScore')],['Water',G('hsWaterScore')]
+      ];
+      const avail=bars.filter(([,el])=>el&&el.textContent!=='--');
+      for(let i=0;i<avail.length;i+=2){
+        const a=avail[i], b=avail[i+1];
+        if(b) row2(a[0], a[1].textContent, b[0], b[1].textContent, sc3[0],sc3[1],sc3[2], sc3[0],sc3[1],sc3[2]);
+        else  row(a[0], a[1].textContent, '', sc3[0],sc3[1],sc3[2]);
+      }
+      gap();
+    }
+
+    // ── Footer
+    doc.setFillColor(5,15,30); doc.rect(0,PH-14,PW,14,'F');
+    doc.setDrawColor(0,229,255); doc.setLineWidth(0.25); doc.line(0,PH-14,PW,PH-14);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(0,229,255);
+    doc.text('HealthScan Pro v3.0', ML, PH-9);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(0,200,180);
+    doc.text('Developed by Muhammad Ali Hassan', PW/2, PH-9, {align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(58,106,132);
+    doc.text('For informational use only. Consult a licensed physician.', ML, PH-4);
+    doc.setTextColor(122,184,212); doc.text(now.toLocaleDateString(), PW-ML, PH-4, {align:'right'});
 
     doc.save('HealthScan-'+now.toLocaleDateString('en-GB').replace(/\//g,'-')+'.pdf');
     toast(t('pdf_done'));
-  }catch(e){toast('❌ PDF error: '+e.message);console.error(e);}
+  }catch(e){ toast('PDF error: '+e.message); console.error(e); }
 }
 
 // ══════════════════════════════════════════
@@ -356,132 +430,115 @@ async function exportPDF(){
 // ══════════════════════════════════════════
 function printReport(){
   if(!S.lastBP){ toast(t('pdf_no_data')); return; }
-  
-  // Build a clean printable HTML page
-  const bp = S.lastBP, spo2 = S.lastSpO2, hr = S.lastHR, tmp = S.lastTemp, rsp = S.lastRsp;
-  const bh = G('bmiHeight').value, bw = G('bmiWeight').value;
-  const bmi = (bh&&bw) ? (bw/((bh/100)**2)).toFixed(1) : null;
-  const bf = bmiGender==='female';
-  const bmiCat = bmi ? (bmi<18.5?'Underweight':bmi<(bf?24:25)?'Normal Weight':bmi<(bf?29:30)?'Overweight':'Obese') : '';
-  const now = new Date();
 
-  // Stress values
-  const sleep=+G('sf1').value, work=+G('sf2').value, ex=+G('sf3').value, mood=+G('sf4').value;
-  const raw=(10-sleep)*2.0+work*2.2-ex*1.8-mood*1.4+20;
+  const bp=S.lastBP,spo2=S.lastSpO2,hr=S.lastHR,tmp=S.lastTemp,rsp=S.lastRsp;
+  const bh=G('bmiHeight').value,bw=G('bmiWeight').value;
+  const bmi=(bh&&bw)?(bw/((bh/100)**2)).toFixed(1):null;
+  const bf=bmiGender==='female';
+  const bmiCat=bmi?(bmi<18.5?'Underweight':bmi<(bf?24:25)?'Normal Weight':bmi<(bf?29:30)?'Overweight':'Obese'):'';
+  const now=new Date();
+
+  // Stress
+  const sl=+G('sf1').value,wk=+G('sf2').value,ex=+G('sf3').value,md=+G('sf4').value;
+  const raw=(10-sl)*2.0+wk*2.2-ex*1.8-md*1.4+20;
   const stress=Math.max(0,Math.min(100,Math.round(raw)));
   const stressLvl=stress<30?'Low':stress<60?'Moderate':'High';
+  const stressCol=stress<30?'green':stress<60?'orange':'red';
 
-  // Sleep values
-  const sleepHrs = G('sleepHours').value || '--';
-  const sleepScoreEl = G('sleepScore');
-  const sleepScore = sleepScoreEl ? sleepScoreEl.textContent : '--';
-  const sleepGradeEl = G('sleepGrade');
-  const sleepGrade = sleepGradeEl ? sleepGradeEl.textContent : '--';
+  // Sleep
+  const sleepHrs=G('sleepHours').value||'--';
+  const sleepScore=G('sleepScore')?G('sleepScore').textContent:'--';
+  const sleepGrade=G('sleepGrade')?G('sleepGrade').textContent:'--';
+  const sleepDebt=G('statDebt')?G('statDebt').textContent:'--';
+  const sleepEff=G('statEff')?G('statEff').textContent:'--';
   const qNames=['','Terrible','Poor','OK','Good','Great'];
+  const sleepQuality=qNames[sleepQ]||sleepQ;
 
-  const histRows = S.history.slice(0,8).map((h,i)=>`
+  // Water
+  const wPct=Math.round(W.total/W.goal*100);
+  const wRem=Math.max(0,W.goal-W.total);
+  const wGlasses=Math.round(W.total/250);
+
+  // Calories
+  const cNet=CAL.total-CAL.burned;
+  const cPct=Math.round(CAL.total/CAL.goal*100);
+
+  // Health Score
+  const hsScore=G('hsBigScore')?G('hsBigScore').textContent:'--';
+  const hsGrade=G('hsGrade')?G('hsGrade').textContent:'--';
+
+  const twoRow=(l1,v1,l2,v2,c1,c2)=>`
     <tr>
-      <td>#${i+1}</td>
-      <td style="color:#c00">${h.bp.sys}/${h.bp.dia} mmHg</td>
-      <td style="color:#007">${h.spo2.val}%</td>
-      <td style="color:#606">${h.hr} bpm</td>
-      <td>${h.time}</td>
-    </tr>`).join('');
+      <td style="color:#666;width:25%">${l1}</td><td style="font-weight:bold;color:${c1||'#111'};width:25%">${v1}</td>
+      <td style="color:#666;width:25%">${l2}</td><td style="font-weight:bold;color:${c2||c1||'#111'};width:25%">${v2}</td>
+    </tr>`;
+  const oneRow=(l,v,c)=>`<tr><td style="color:#666;width:25%">${l}</td><td colspan="3" style="font-weight:bold;color:${c||'#111'}">${v}</td></tr>`;
+  const secHdr=(title,col)=>`<tr><td colspan="4" style="background:${col}15;border-left:4px solid ${col};padding:6px 10px;font-weight:bold;color:${col};font-size:11px;letter-spacing:1px">${title}</td></tr>`;
 
-  const printWin = window.open('','_blank','width=800,height=900');
+  const printWin=window.open('','_blank','width=850,height=1050');
   printWin.document.write(`<!DOCTYPE html>
-<html><head><meta charset="UTF-8"/>
-<title>HealthScan Report</title>
+<html><head><meta charset="UTF-8"/><title>HealthScan Report</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Arial,sans-serif;background:#fff;color:#111;padding:24px;font-size:12px}
-  h1{font-size:22px;color:#0077aa;letter-spacing:2px;margin-bottom:2px}
-  .subtitle{font-size:9px;color:#888;letter-spacing:3px;margin-bottom:4px}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #00aacc;padding-bottom:10px;margin-bottom:16px}
+  body{font-family:Arial,sans-serif;background:#fff;color:#111;padding:20px;font-size:11px}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #00aacc;padding-bottom:10px;margin-bottom:14px}
+  h1{font-size:20px;color:#0077aa;letter-spacing:2px}
+  .subtitle{font-size:8px;color:#888;letter-spacing:3px;margin-top:3px}
   .hright{text-align:right;font-size:10px;color:#555}
-  .section{margin-bottom:14px;page-break-inside:avoid}
-  .sec-title{background:#f0faff;border-left:4px solid #00aacc;padding:5px 10px;font-size:11px;font-weight:bold;color:#005577;letter-spacing:1px;margin-bottom:6px}
-  table{width:100%;border-collapse:collapse}
-  td{padding:5px 10px;border-bottom:1px solid #eee}
-  td:first-child{color:#777;width:45%}
-  td:last-child{font-weight:bold}
-  .footer{margin-top:20px;padding-top:10px;border-top:1px solid #ddd;display:flex;justify-content:space-between;font-size:9px;color:#999}
+  table{width:100%;border-collapse:collapse;margin-bottom:12px}
+  td{padding:5px 8px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+  .footer{margin-top:16px;padding-top:8px;border-top:1px solid #ddd;display:flex;justify-content:space-between;font-size:8px;color:#999}
   .dev-name{color:#0077aa;font-weight:bold}
-  @media print{
-    .no-print{display:none!important}
-    body{padding:12px}
-  }
-</style>
-</head><body>
+  .print-btn-wrap{text-align:right;margin-bottom:12px}
+  @media print{.no-print{display:none!important}}
+</style></head><body>
+
+<div class="print-btn-wrap no-print">
+  <button onclick="window.print()" style="padding:8px 20px;background:#0077aa;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold">🖨️ PRINT NOW</button>
+</div>
+
 <div class="header">
-  <div>
-    <h1>HEALTHSCAN PRO</h1>
-    <div class="subtitle">BIOMETRIC MEDICAL REPORT</div>
-  </div>
-  <div class="hright">
-    <div>${now.toLocaleString()}</div>
-    <div style="margin-top:4px;font-size:9px">Auto-generated</div>
-    <button class="no-print" onclick="window.print()" style="margin-top:8px;padding:6px 14px;background:#0077aa;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold">🖨️ PRINT</button>
-  </div>
+  <div><h1>HEALTHSCAN PRO</h1><div class="subtitle">BIOMETRIC MEDICAL REPORT</div></div>
+  <div class="hright"><div>${now.toLocaleString()}</div><div style="margin-top:4px;font-size:9px;color:#0077aa;font-weight:bold">Developed by Muhammad Ali Hassan</div></div>
 </div>
 
-<div class="section">
-  <div class="sec-title">🩸 VITAL SIGNS</div>
-  <table>
-    <tr><td>Systolic Blood Pressure</td><td style="color:#cc0033">${bp.sys} mmHg</td></tr>
-    <tr><td>Diastolic Blood Pressure</td><td style="color:#cc6600">${bp.dia} mmHg</td></tr>
-    <tr><td>BP Status</td><td>${bp.label}</td></tr>
-    <tr><td>Blood Oxygen (SpO2)</td><td style="color:#0055cc">${spo2.val}%</td></tr>
-    <tr><td>SpO2 Status</td><td>${spo2.label}</td></tr>
-  </table>
-</div>
+<table>
+  ${secHdr('🩸 VITAL SIGNS','#0099cc')}
+  ${twoRow('Systolic BP',bp.sys+' mmHg','Diastolic BP',bp.dia+' mmHg','#cc0033','#cc6600')}
+  ${twoRow('BP Status',bp.label,'Blood Oxygen',spo2.val+'%','#886600','#0055cc')}
+  ${oneRow('SpO2 Status',spo2.label,'#008866')}
 
-<div class="section">
-  <div class="sec-title">💚 ADDITIONAL METRICS</div>
-  <table>
-    <tr><td>Heart Rate</td><td style="color:#cc0055">${hr} BPM</td></tr>
-    <tr><td>Body Temperature</td><td style="color:#cc8800">${tmp} °C</td></tr>
-    <tr><td>Respiratory Rate</td><td style="color:#0055cc">${rsp} /min</td></tr>
-  </table>
-</div>
+  ${secHdr('💚 ADDITIONAL METRICS','#009944')}
+  ${twoRow('Heart Rate',hr+' BPM','Body Temperature',tmp+' °C','#cc0055','#cc8800')}
+  ${oneRow('Respiratory Rate',rsp+' /min','#0055cc')}
 
-${bmi ? `<div class="section">
-  <div class="sec-title">⚖️ BMI DATA</div>
-  <table>
-    <tr><td>Gender</td><td>${bmiGender==='female'?'Female':'Male'}</td></tr>
-    <tr><td>Height / Weight</td><td>${bh} cm / ${bw} kg</td></tr>
-    <tr><td>BMI Score</td><td style="color:#cc6600">${bmi}</td></tr>
-    <tr><td>BMI Category</td><td>${bmiCat}</td></tr>
-  </table>
-</div>` : ''}
+  ${bmi?`${secHdr('⚖️ BMI DATA','#cc7700')}
+  ${twoRow('Gender',bmiGender==='female'?'Female':'Male','BMI Score',bmi,'#333','#cc7700')}
+  ${twoRow('Height',bh+' cm','Weight',bw+' kg','#333','#333')}
+  ${oneRow('BMI Category',bmiCat,'#cc7700')}`:''}
 
-<div class="section">
-  <div class="sec-title">🧠 STRESS ANALYSIS</div>
-  <table>
-    <tr><td>Sleep / Work / Exercise / Mood</td><td>${sleep}h &nbsp; ${work}/10 &nbsp; ${ex}/10 &nbsp; ${mood}/10</td></tr>
-    <tr><td>Stress Score</td><td style="color:${stress<30?'green':stress<60?'orange':'red'}">${stress}/100</td></tr>
-    <tr><td>Stress Level</td><td style="color:${stress<30?'green':stress<60?'orange':'red'}">${stressLvl}</td></tr>
-  </table>
-</div>
+  ${secHdr('🧠 STRESS ANALYSIS','#'+( stress<30?'009944':stress<60?'cc7700':'cc0033'))}
+  ${twoRow('Sleep Hrs',sl+'h','Workload',wk+'/10','#0066aa','#cc7700')}
+  ${twoRow('Exercise',ex+'/10','Mood',md+'/10','#009944','#7700cc')}
+  ${twoRow('Stress Score',stress+'/100','Level',stressLvl,stressCol,stressCol)}
 
-${sleepHrs!=='--'?`<div class="section">
-  <div class="sec-title">😴 SLEEP ANALYSIS</div>
-  <table>
-    <tr><td>Hours Slept / Quality</td><td>${sleepHrs}h / ${qNames[sleepQ]||sleepQ}</td></tr>
-    <tr><td>Sleep Score / Grade</td><td>${sleepScore}/100 — ${sleepGrade}</td></tr>
-    <tr><td>Sleep Debt / Efficiency</td><td>${G('statDebt')?G('statDebt').textContent:'--'} / ${G('statEff')?G('statEff').textContent:'--'}</td></tr>
-  </table>
-</div>`:''}
+  ${sleepHrs!=='--'?`${secHdr('😴 SLEEP ANALYSIS','#7700cc')}
+  ${twoRow('Hours Slept',sleepHrs+'h','Quality',sleepQuality,'#0066aa','#7700cc')}
+  ${twoRow('Sleep Score',sleepScore+'/100','Grade',sleepGrade,'#7700cc','#333')}
+  ${twoRow('Sleep Debt',sleepDebt,'Efficiency',sleepEff,'#cc7700','#009944')}`:''}
 
-${S.history.length>0?`<div class="section">
-  <div class="sec-title">📋 READING HISTORY</div>
-  <table>
-    <tr style="background:#f5f5f5;font-size:10px;color:#555">
-      <td>#</td><td>Blood Pressure</td><td>SpO2</td><td>Heart Rate</td><td>Time</td>
-    </tr>
-    ${histRows}
-  </table>
-</div>`:''}
+  ${W.total>0?`${secHdr('💧 WATER INTAKE','#0099cc')}
+  ${twoRow('Total Intake',W.total+' ml','Daily Goal',W.goal+' ml','#0066aa','#0066aa')}
+  ${twoRow('Remaining',wRem+' ml','Progress',wPct+'%','#cc7700','#009944')}
+  ${oneRow('Glasses',wGlasses+' glasses','#0066aa')}`:''}
+
+  ${CAL.total>0||CAL.burned>0?`${secHdr('🔥 CALORIE TRACKING','#cc6600')}
+  ${twoRow('Calories Consumed',CAL.total+' kcal','Calories Burned',CAL.burned+' kcal','#cc6600','#009944')}
+  ${twoRow('Net Calories',cNet+' kcal','Progress',cPct+'% of goal',cNet>CAL.goal?'#cc0033':'#009944','#0066aa')}`:''}
+
+  ${hsScore!=='--'?`${secHdr('⭐ OVERALL HEALTH SCORE','#0077aa')}
+  ${twoRow('Health Score',hsScore+'/100','Grade',hsGrade,'#0077aa','#333')}`:''}
+</table>
 
 <div class="footer">
   <div>HealthScan Pro v3.0 — For informational use only. Consult a licensed physician.</div>
@@ -489,10 +546,9 @@ ${S.history.length>0?`<div class="section">
   <div>${now.toLocaleDateString()}</div>
 </div>
 </body></html>`);
-
   printWin.document.close();
   printWin.focus();
-  setTimeout(()=>{ printWin.print(); }, 800);
+  setTimeout(()=>printWin.print(),800);
 }
 
 
@@ -639,4 +695,387 @@ G('ibtn').addEventListener('click',async()=>{
 // ══════════ SERVICE WORKER ══════════
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+// ══════════════════════════════════════════
+//  WATER INTAKE TRACKER
+// ══════════════════════════════════════════
+const W = {
+  goal: 2000,
+  total: 0,
+  log: [],
+  icons: { 150:'🥤', 250:'☕', 330:'🧃', 500:'💧', 750:'🫙', 1000:'🍶' }
+};
+
+function initWater(){
+  try{
+    const saved = localStorage.getItem('water_' + new Date().toDateString());
+    if(saved){ const d=JSON.parse(saved); W.total=d.total||0; W.log=d.log||[]; W.goal=d.goal||2000; }
+    const sg = localStorage.getItem('water_goal');
+    if(sg) W.goal = parseInt(sg);
+  }catch(e){}
+  const gi = document.getElementById('waterGoalInp');
+  if(gi) gi.value = W.goal;
+  updateWaterUI();
+  renderWaterLog();
+}
+
+function saveWater(){
+  try{
+    localStorage.setItem('water_' + new Date().toDateString(), JSON.stringify({total:W.total, log:W.log, goal:W.goal}));
+    localStorage.setItem('water_goal', W.goal);
+  }catch(e){}
+}
+
+function setWaterGoal(){
+  const v = parseInt(document.getElementById('waterGoalInp').value);
+  if(!v || v < 100){ toast('⚠ Enter valid goal (min 100ml)'); return; }
+  W.goal = v;
+  saveWater();
+  updateWaterUI();
+  toast('✅ Daily goal set to ' + v + 'ml');
+}
+
+function addWater(ml){
+  const time = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  W.total += ml;
+  W.log.unshift({ ml, time, icon: W.icons[ml] || '💧' });
+  if(W.log.length > 30) W.log = W.log.slice(0,30);
+  saveWater();
+  updateWaterUI();
+  renderWaterLog();
+  // Celebration toast
+  const pct = Math.round(W.total/W.goal*100);
+  if(pct >= 100) toast('🎉 Daily goal achieved! Great job!');
+  else if(pct >= 75) toast('💪 ' + pct + '% done — almost there!');
+  else toast('💧 +' + ml + 'ml added — ' + pct + '% of goal');
+}
+
+function addCustomWater(){
+  const v = parseInt(document.getElementById('waterCustom').value);
+  if(!v || v < 1){ toast('⚠ Enter a valid amount'); return; }
+  document.getElementById('waterCustom').value = '';
+  addWater(v);
+}
+
+function removeWaterEntry(idx){
+  W.total = Math.max(0, W.total - W.log[idx].ml);
+  W.log.splice(idx, 1);
+  saveWater();
+  updateWaterUI();
+  renderWaterLog();
+}
+
+function resetWater(){
+  W.total = 0; W.log = [];
+  saveWater();
+  updateWaterUI();
+  renderWaterLog();
+  toast('🔄 Water log reset for today');
+}
+
+function updateWaterUI(){
+  const pct = Math.min(100, Math.round(W.total / W.goal * 100));
+  const rem = Math.max(0, W.goal - W.total);
+  const glasses = Math.round(W.total / 250);
+  const goalGlasses = Math.round(W.goal / 250);
+
+  // Circle arc
+  const arc = document.getElementById('waterArc');
+  if(arc) arc.style.strokeDashoffset = 314 - (314 * pct / 100);
+
+  // Numbers
+  const mlEl = document.getElementById('waterMl');
+  if(mlEl){
+    mlEl.textContent = W.total;
+    mlEl.classList.toggle('complete', pct >= 100);
+  }
+  const pctEl = document.getElementById('waterPct');
+  if(pctEl) pctEl.textContent = pct + '%';
+
+  const goalDsp = document.getElementById('waterGoalDisplay');
+  if(goalDsp) goalDsp.textContent = W.goal + ' ml';
+
+  const remEl = document.getElementById('waterRemaining');
+  if(remEl) remEl.textContent = rem + ' ml';
+
+  const glEl = document.getElementById('waterGlasses');
+  if(glEl) glEl.textContent = glasses + ' / ' + goalGlasses;
+
+  // Status
+  const stEl = document.getElementById('waterStatus');
+  if(stEl){
+    if(W.total === 0){ stEl.textContent = LANG==='ur'?'شروع نہیں':'Not started'; stEl.style.color='var(--t3)'; }
+    else if(pct < 25){ stEl.textContent = LANG==='ur'?'بہت کم':'Very Low'; stEl.style.color='var(--red)'; }
+    else if(pct < 50){ stEl.textContent = LANG==='ur'?'کم':'Low'; stEl.style.color='var(--orange)'; }
+    else if(pct < 75){ stEl.textContent = LANG==='ur'?'ٹھیک ہے':'On Track'; stEl.style.color='var(--cyan)'; }
+    else if(pct < 100){ stEl.textContent = LANG==='ur'?'اچھا جا رہے ہو':'Almost There!'; stEl.style.color='var(--green)'; }
+    else { stEl.textContent = LANG==='ur'?'ہدف حاصل! 🎉':'Goal Reached! 🎉'; stEl.style.color='var(--green)'; }
+  }
+}
+
+function renderWaterLog(){
+  const empty = document.getElementById('waterLogEmpty');
+  const list  = document.getElementById('waterLogList');
+  if(!list) return;
+  if(W.log.length === 0){
+    if(empty) empty.style.display = 'block';
+    list.innerHTML = '';
+    return;
+  }
+  if(empty) empty.style.display = 'none';
+  list.innerHTML = W.log.map((e,i) => `
+    <div class="wlog-item">
+      <span class="wlog-icon">${e.icon || '💧'}</span>
+      <span class="wlog-amount">+${e.ml} ml</span>
+      <span class="wlog-time">${e.time}</span>
+      <button class="wlog-del" onclick="removeWaterEntry(${i})" title="Remove">✕</button>
+    </div>`).join('');
+}
+
+// Init water on load
+initWater();
+
+// ══════════════════════════════════════════
+//  STRESS ANALYZE (with result card)
+// ══════════════════════════════════════════
+function analyzeStress(){
+  const sleep=+G('sf1').value,work=+G('sf2').value,ex=+G('sf3').value,mood=+G('sf4').value;
+  G('sv1').textContent=sleep+'h';G('sv2').textContent=work+'/10';
+  G('sv3').textContent=ex+'/10';G('sv4').textContent=mood+'/10';
+  const raw=(10-sleep)*2.0+work*2.2-ex*1.8-mood*1.4+20;
+  const stress=Math.max(0,Math.min(100,Math.round(raw)));
+  G('stressNum').textContent=stress;
+  G('stressArc').style.strokeDashoffset=408-(408*stress/100);
+
+  let lvl,risk,col,advices=[];
+  if(stress<30){
+    lvl=LANG==='ur'?'کم':'Low';risk=LANG==='ur'?'محفوظ':'Safe';col='var(--green)';
+    advices=LANG==='ur'?[['🌟','ذہنی صحت بہترین ہے'],['🎵','پسندیدہ کام کرتے رہیں'],['💪','ورزش جاری رکھیں']]:
+    [['🌟','Mental health is excellent'],['🎵','Keep doing activities you love'],['💪','Maintain exercise routine']];
+  } else if(stress<60){
+    lvl=LANG==='ur'?'درمیانہ':'Moderate';risk=LANG==='ur'?'قابو میں':'Manageable';col='var(--orange)';
+    advices=LANG==='ur'?[['🧘','روزانہ 10 منٹ گہری سانس لیں'],['🚶','باہر سیر کریں'],['😴','7-8 گھنٹے نیند لیں'],['📵','سوشل میڈیا کم کریں']]:
+    [['🧘','Practice 10 min deep breathing'],['🚶','Take daily outdoor walks'],['😴','Aim for 7-8 hours sleep'],['📵','Reduce screen time']];
+  } else {
+    lvl=LANG==='ur'?'زیادہ':'High';risk=LANG==='ur'?'خطرناک':'High Risk';col='var(--red)';
+    advices=LANG==='ur'?[['👨‍⚕️','ڈاکٹر سے بات کریں'],['🛑','کام کی حدود طے کریں'],['😴','نیند کو ترجیح دیں'],['🤝','قریبی سے بات کریں']]:
+    [['👨‍⚕️','Consider speaking to a therapist'],['🛑','Set clear work boundaries'],['😴','Prioritize sleep above all'],['🤝','Talk to someone you trust']];
+  }
+
+  G('stressLabel').textContent = (stress<30?'😌 ':stress<60?'😐 ':'😰 ') + lvl + ' Stress';
+
+  // Show result card
+  const card = G('stressResultCard');
+  if(card){
+    card.style.display='block';
+    G('srScore').textContent=stress+'/100'; G('srScore').style.color=col;
+    G('srLevel').textContent=lvl; G('srLevel').style.color=col;
+    G('srRisk').textContent=risk; G('srRisk').style.color=col;
+  }
+  const adv = G('stressAdvice');
+  if(adv){ adv.style.display='block'; }
+  G('adviceList').innerHTML=advices.map(a=>`<div class="tip-item"><span class="tip-ico">${a[0]}</span><span class="tip-txt">${a[1]}</span></div>`).join('');
+  toast('🧠 Stress analysis complete');
+}
+
+// ══════════════════════════════════════════
+//  CALORIE TRACKER
+// ══════════════════════════════════════════
+const CAL = { goal:2000, total:0, burned:0, log:[] };
+
+function initCal(){
+  try{
+    const saved=localStorage.getItem('cal_'+new Date().toDateString());
+    if(saved){ const d=JSON.parse(saved);CAL.total=d.total||0;CAL.burned=d.burned||0;CAL.log=d.log||[]; }
+    const sg=localStorage.getItem('cal_goal');
+    if(sg) CAL.goal=parseInt(sg);
+  }catch(e){}
+  const gi=G('calGoalInp'); if(gi) gi.value=CAL.goal;
+  updateCalUI(); renderCalLog();
+}
+function saveCal(){
+  try{
+    localStorage.setItem('cal_'+new Date().toDateString(),JSON.stringify({total:CAL.total,burned:CAL.burned,log:CAL.log}));
+    localStorage.setItem('cal_goal',CAL.goal);
+  }catch(e){}
+}
+function setCalGoal(){
+  const v=parseInt(G('calGoalInp').value);
+  if(!v||v<100){ toast('⚠ Enter valid goal'); return; }
+  CAL.goal=v; saveCal(); updateCalUI();
+  toast('✅ Calorie goal set to '+v);
+}
+function addCal(kcal,icon,name){
+  const time=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  CAL.total+=kcal; CAL.log.unshift({kcal,icon,name,time,type:'food'});
+  if(CAL.log.length>30) CAL.log=CAL.log.slice(0,30);
+  saveCal(); updateCalUI(); renderCalLog();
+  const pct=Math.round(CAL.total/CAL.goal*100);
+  if(pct>=100) toast('⚠ Daily calorie goal reached!');
+  else toast(icon+' +'+kcal+' kcal — '+pct+'% of goal');
+}
+function burnCal(kcal,icon,name){
+  const time=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  CAL.burned+=kcal; CAL.log.unshift({kcal,icon,name,time,type:'exercise'});
+  if(CAL.log.length>30) CAL.log=CAL.log.slice(0,30);
+  saveCal(); updateCalUI(); renderCalLog();
+  toast(icon+' -'+kcal+' kcal burned! 💪');
+}
+function addCustomCal(){
+  const name=G('calFoodName').value||'Custom';
+  const v=parseInt(G('calCustom').value);
+  if(!v||v<1){ toast('⚠ Enter calories'); return; }
+  G('calFoodName').value=''; G('calCustom').value='';
+  addCal(v,'🍽️',name);
+}
+function removeCalEntry(i){
+  const e=CAL.log[i];
+  if(e.type==='food') CAL.total=Math.max(0,CAL.total-e.kcal);
+  else CAL.burned=Math.max(0,CAL.burned-e.kcal);
+  CAL.log.splice(i,1); saveCal(); updateCalUI(); renderCalLog();
+}
+function resetCal(){
+  CAL.total=0;CAL.burned=0;CAL.log=[];
+  saveCal(); updateCalUI(); renderCalLog();
+  toast('🔄 Calorie log reset');
+}
+function updateCalUI(){
+  const net=CAL.total-CAL.burned;
+  const pct=Math.min(100,Math.round(CAL.total/CAL.goal*100));
+  const rem=Math.max(0,CAL.goal-net);
+  const arc=G('calArc');
+  if(arc) arc.style.strokeDashoffset=314-(314*pct/100);
+  const cn=G('calTotal'); if(cn) cn.textContent=CAL.total;
+  const cp=G('calPct'); if(cp) cp.textContent=pct+'%';
+  const cgd=G('calGoalDisplay'); if(cgd) cgd.textContent=CAL.goal;
+  const cr=G('calRemaining'); if(cr) cr.textContent=rem;
+  const cb=G('calBurned'); if(cb) cb.textContent=CAL.burned;
+  const cnet=G('calNet'); if(cnet){ cnet.textContent=net; cnet.style.color=net>CAL.goal?'var(--red)':'var(--green)'; }
+}
+function renderCalLog(){
+  const empty=G('calLogEmpty'),list=G('calLogList');
+  if(!list) return;
+  if(!CAL.log.length){ if(empty) empty.style.display='block'; list.innerHTML=''; return; }
+  if(empty) empty.style.display='none';
+  list.innerHTML=CAL.log.map((e,i)=>`
+    <div class="wlog-item">
+      <span class="wlog-icon">${e.icon}</span>
+      <span class="wlog-amount" style="color:${e.type==='exercise'?'var(--green)':'var(--orange)'}">${e.type==='food'?'+':'−'}${e.kcal} kcal</span>
+      <span class="wlog-time">${e.name} · ${e.time}</span>
+      <button class="wlog-del" onclick="removeCalEntry(${i})">✕</button>
+    </div>`).join('');
+}
+initCal();
+
+// ══════════════════════════════════════════
+//  HEALTH SCORE CALCULATOR
+// ══════════════════════════════════════════
+function calcHealthScore(){
+  let scores={}, total=0, count=0, insights=[];
+
+  // BP Score (0-100)
+  if(S.lastBP){
+    const s=S.lastBP.sys,d=S.lastBP.dia;
+    let bpS=100;
+    if(s>=180||d>=120) bpS=10;
+    else if(s>=160||d>=100) bpS=30;
+    else if(s>=140||d>=90) bpS=50;
+    else if(s>=130||d>=80) bpS=70;
+    else if(s>=120) bpS=85;
+    scores.bp=bpS;
+    if(bpS<70) insights.push(['🩸',bpS<50?'Blood pressure needs immediate attention':'Blood pressure is slightly elevated — monitor closely']);
+    else insights.push(['🩸','Blood pressure is in good range']);
+  }
+
+  // SpO2 Score
+  if(S.lastSpO2){
+    const v=S.lastSpO2.val;
+    let s2=v>=97?100:v>=95?80:v>=92?50:20;
+    scores.spo2=s2;
+    if(s2<70) insights.push(['💧','Blood oxygen is low — consult a doctor']);
+    else insights.push(['💧','Blood oxygen saturation is good']);
+  }
+
+  // BMI Score
+  const bh=G('bmiHeight').value,bw=G('bmiWeight').value;
+  if(bh&&bw){
+    const bmi=bw/((bh/100)**2);
+    const bf=bmiGender==='female';
+    let bs=bmi<18.5?60:bmi<(bf?24:25)?100:bmi<(bf?29:30)?70:40;
+    scores.bmi=bs;
+    if(bs<70) insights.push(['⚖️','BMI indicates weight management needed']);
+    else insights.push(['⚖️','BMI is in healthy range']);
+  }
+
+  // Stress Score (inverted — lower stress = higher score)
+  const sf1=G('sf1');
+  if(sf1){
+    const sleep=+sf1.value,work=+G('sf2').value,ex=+G('sf3').value,mood=+G('sf4').value;
+    const raw=(10-sleep)*2.0+work*2.2-ex*1.8-mood*1.4+20;
+    const stress=Math.max(0,Math.min(100,Math.round(raw)));
+    const ss=Math.round(100-stress);
+    scores.stress=ss;
+    if(ss<50) insights.push(['🧠','High stress detected — practice relaxation techniques']);
+    else insights.push(['🧠','Stress levels are manageable']);
+  }
+
+  // Sleep Score
+  const sleepHrsEl=G('sleepHours');
+  if(sleepHrsEl&&sleepHrsEl.value){
+    const hrs=parseFloat(sleepHrsEl.value);
+    const qNames=[0,20,40,60,80,100];
+    const sq=qNames[sleepQ]||60;
+    const hs=Math.round((Math.min(hrs,9)/9*50)+(sq*0.5));
+    scores.sleep=Math.min(100,hs);
+    if(hs<60) insights.push(['😴','Sleep quality needs improvement']);
+    else insights.push(['😴','Sleep pattern is healthy']);
+  }
+
+  // Water Score
+  const waterPct=Math.round(W.total/W.goal*100);
+  if(W.total>0){
+    scores.water=Math.min(100,waterPct);
+    if(waterPct<50) insights.push(['💧','Drink more water throughout the day']);
+    else insights.push(['💧','Hydration level is good']);
+  }
+
+  // Calculate overall
+  const vals=Object.values(scores);
+  const overall=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
+
+  // Animate score
+  const scoreEl=G('hsBigScore');
+  let cur=0;
+  const anim=setInterval(()=>{ cur+=2; if(cur>=overall){ cur=overall; clearInterval(anim); } scoreEl.textContent=cur; },20);
+
+  // Grade
+  let grade,gcol;
+  if(overall>=85){grade='Excellent 🌟';gcol='var(--green)';}
+  else if(overall>=70){grade='Good 👍';gcol='var(--cyan)';}
+  else if(overall>=55){grade='Average 😐';gcol='var(--orange)';}
+  else{grade='Needs Attention ⚠';gcol='var(--red)';}
+  G('hsGrade').textContent=grade; G('hsGrade').style.color=gcol;
+  G('hsBigScore').style.color=gcol;
+
+  // Bars
+  const barMap=[
+    ['hsBPBar','hsBPScore','bp'],['hsSpO2Bar','hsSpO2Score','spo2'],
+    ['hsBMIBar','hsBMIScore','bmi'],['hsStressBar','hsStressScore','stress'],
+    ['hsSleepBar','hsSleepScore','sleep'],['hsWaterBar','hsWaterScore','water']
+  ];
+  barMap.forEach(([bar,score,key])=>{
+    const v=scores[key];
+    const bEl=G(bar),sEl=G(score);
+    if(v!==undefined){
+      setTimeout(()=>{ if(bEl) bEl.style.width=v+'%'; },300);
+      if(sEl) sEl.textContent=v;
+    } else {
+      if(sEl) sEl.textContent='--';
+    }
+  });
+
+  // Advice
+  const adv=G('hsAdvice'); if(adv) adv.style.display='block';
+  G('hsAdviceList').innerHTML=insights.map(a=>`<div class="tip-item"><span class="tip-ico">${a[0]}</span><span class="tip-txt">${a[1]}</span></div>`).join('');
+  toast('⭐ Health score: '+overall+'/100');
 }
