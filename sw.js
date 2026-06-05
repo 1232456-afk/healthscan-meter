@@ -1,4 +1,4 @@
-const CACHE = 'healthscan-v8';
+const CACHE = 'healthscan-v9';
 const FILES = [
   './index.html',
   './style.css', 
