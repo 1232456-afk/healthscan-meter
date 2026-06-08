@@ -9,8 +9,12 @@
 <link rel="manifest" href="manifest.json"/>
 <title>HealthScan Pro — BP & Oximeter</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+/* Offline font fallback */
+:root { --ff-orbitron: 'Orbitron', 'Courier New', monospace; --ff-rajdhani: 'Rajdhani', Arial, sans-serif; --ff-mono: 'Share Tech Mono', 'Courier New', monospace; }
+</style>
 
-<link rel="stylesheet" href="style.css?v=1780634261"/></head>
+<link rel="stylesheet" href="style.css"/></head>
 <body>
 
 <div class="lang-toggle">
@@ -515,6 +519,6 @@
 </div><!-- /wrap -->
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="app.js?v=1780634261"></script>
+<script src="app.js"></script>
 </body>
 </html>
