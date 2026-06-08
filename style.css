@@ -1,5 +1,9 @@
 :root {
   --bg: #030912;
+  /* Font families with offline fallbacks */
+  --ff-o: 'Orbitron', 'Courier New', monospace;
+  --ff-r: 'Rajdhani', Arial, sans-serif;
+  --ff-m: 'Share Tech Mono', 'Courier New', monospace;
   --bg-card: #060f20;
   --bg-panel: #0a1628;
   --bg-glass: rgba(6,15,32,0.85);
@@ -31,7 +35,7 @@
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
 body {
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--ff-r);
   background: var(--bg);
   color: var(--t1);
   min-height: 100vh;
